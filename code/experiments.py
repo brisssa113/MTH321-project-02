@@ -19,6 +19,7 @@ plt.rcParams.update({"font.size": 13, "axes.labelsize": 13,
                      "ytick.labelsize": 11, "legend.fontsize": 11})
 import numpy as np
 import scipy
+import skfem
 from scipy.sparse.linalg import LinearOperator, cg, eigsh, gmres, spilu
 
 from models import (
@@ -173,7 +174,7 @@ def _timed_medians(N: int, boundary: str, closure: str, repeats: int = 5):
     }, representative
 
 
-def run_refinement(output_dir: Path, grids=(16, 32, 64, 128)) -> list[dict]:
+def run_refinement(output_dir: Path, grids=(16, 32, 64, 128, 256, 512)) -> list[dict]:
     output_dir.mkdir(parents=True, exist_ok=True)
     rows: list[dict] = []
     for boundary in ("neumann", "robin"):
@@ -278,6 +279,13 @@ def write_fitted_orders(rows: list[dict], output_dir: Path, fit_levels: int = 3)
                 )
                 record[f"fitted_order_{metric}"] = slope
                 record[f"r_squared_{metric}"] = r_squared
+                errors = [float(r[metric]) for r in selected]
+                numerator = errors[0] - errors[1]
+                denominator = errors[1] - errors[2]
+                record[f"richardson_order_{metric}"] = (
+                    float(np.log2(numerator / denominator))
+                    if numerator * denominator > 0 else float("nan")
+                )
             fitted.append(record)
     path = output_dir / "fitted_orders.csv"
     with path.open("w", newline="", encoding="utf-8") as handle:
@@ -291,8 +299,7 @@ def symmetrising_weights(system) -> np.ndarray:
     """Return the report's exact positive row weights W_h^c."""
     weights = np.ones(system.A.shape[0], dtype=float)
     boundary_weight = 1.0 / system.h if system.closure == "first" else 0.5
-    for j in range(1, system.N):
-        weights[index(system.N, j, system.N)] = boundary_weight
+    weights[system.N - 1::system.N] = boundary_weight
     return weights
 
 
@@ -305,9 +312,7 @@ def weighted_system(system):
 
 def _zero_extended_vector(vector: np.ndarray, N: int) -> np.ndarray:
     full = np.zeros((N + 1, N + 1), dtype=float)
-    for j in range(1, N):
-        for i in range(1, N + 1):
-            full[j, i] = vector[index(i, j, N)]
+    full[1:N, 1:N + 1] = np.asarray(vector).reshape(N - 1, N)
     return full
 
 
@@ -580,6 +585,38 @@ def run_algebraic_error_separation(
     return records
 
 
+def run_weak_gmres_check(output_dir: Path, N: int = 64) -> list[dict]:
+    """A genuinely iterative check using only Jacobi, with no ILU factorisation."""
+    records = []
+    for boundary in ("neumann", "robin"):
+        for closure in ("first", "ghost"):
+            case = run_case(N, boundary, closure)
+            A, b = case.assembly.A, case.assembly.b
+            diagonal = A.diagonal()
+            M = LinearOperator(A.shape, matvec=lambda v: v / diagonal)
+            for rtol in (1e-8, 1e-10):
+                history = []
+                iterative, status = gmres(
+                    A, b, x0=np.zeros_like(b), M=M, rtol=rtol, atol=0.0,
+                    restart=50, maxiter=1000, callback=history.append,
+                    callback_type="pr_norm",
+                )
+                if status != 0:
+                    raise RuntimeError(f"Jacobi GMRES failed: {boundary}/{closure}, {rtol}, {status}")
+                difference = float(np.linalg.norm(iterative - case.solution, ord=np.inf))
+                discretisation = case.diagnostics.linf
+                records.append({
+                    "boundary": boundary, "closure": closure, "N": N,
+                    "rtol": rtol, "iterations": len(history), "exit_status": status,
+                    "componentwise_backward_error": componentwise_backward_error(A, iterative, b),
+                    "algebraic_to_discretisation_ratio": difference / discretisation,
+                })
+    with (output_dir / "weak_gmres_comparison.csv").open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(records[0]))
+        writer.writeheader(); writer.writerows(records)
+    return records
+
+
 def write_report_summary(rows: list[dict], fitted: list[dict], output_dir: Path) -> None:
     """Write compact CSV and LaTeX tables that can be included in the report."""
     fitted_by_key = {(r["boundary"], r["closure"]): r for r in fitted}
@@ -715,23 +752,30 @@ def write_section5_summary(
 
 
 def run_all(output_dir: Path) -> None:
+    from fem_oracle import run_fem_comparison
+    from pure_neumann import run_pure_neumann
     checks = run_sanity_checks()
     rows = run_refinement(output_dir)
     fitted = write_fitted_orders(rows, output_dir)
     algebraic = run_algebraic_error_separation(output_dir)
+    weak_gmres = run_weak_gmres_check(output_dir)
     weighted_diagnostics = run_weighted_matrix_diagnostics(output_dir)
     energy_rows = run_energy_convergence(output_dir)
     cg_rows = run_cg_comparison(output_dir)
     matched = run_matched_accuracy(output_dir, rows)
+    fem_rows = run_fem_comparison(output_dir)
+    pure_rows = run_pure_neumann(output_dir)
     write_report_summary(rows, fitted, output_dir)
     write_section5_summary(weighted_diagnostics, energy_rows, cg_rows, output_dir)
-    from make_figures import make_plots, make_tolerance_plot, make_weighted_energy_plots
+    from make_figures import make_plots, make_tolerance_plot, make_weighted_energy_plots, make_depth_plots
     make_plots(rows, output_dir, fitted)
     make_tolerance_plot(algebraic, output_dir)
     make_weighted_energy_plots(energy_rows, cg_rows, output_dir)
+    make_depth_plots(fem_rows, pure_rows, output_dir)
     metadata = {
         "python": platform.python_version(), "platform": platform.platform(),
         "numpy": np.__version__, "scipy": scipy.__version__,
+        "scikit_fem": skfem.__version__,
         "matplotlib": matplotlib.__version__,
         "machine": platform.machine(),
         "thread_environment": {name: os.environ.get(name, "unset") for name in
@@ -739,19 +783,22 @@ def run_all(output_dir: Path) -> None:
         "solver": "scipy.sparse.linalg.spsolve (SuperLU), CSC input, use_umfpack=False",
         "solver_tolerance": "N/A (sparse direct solver)",
         "algebraic_cross_check": "GMRES+ILU at rtol 1e-8, 1e-10, 1e-12; atol 0; N=64",
+        "weak_iterative_check": "Jacobi-preconditioned GMRES without factorisation; rtol 1e-8 and 1e-10; N=64",
         "weighted_matrix_check": (
             "K=W*A with report weights; symmetry, smallest eigenvalue, and energy identity; N=32"
         ),
         "weighted_cg_check": "Jacobi-preconditioned CG on K=W*A; rtol 1e-10; atol 0; N=64",
+        "fem_oracle": "scikit-fem P1 triangles on shared Cartesian vertices, exact Dirichlet traces, report weak form; N=16,32,64,128",
+        "pure_neumann_depth": "all vertices unknown, FO derivative rows or centred ghost PDE rows, bordered arithmetic-mean-zero gauge; N=8,16,32,64",
         "maximum_weighted_symmetry_defect": max(
             r["weighted_asymmetry_frobenius"] for r in weighted_diagnostics
         ),
         "minimum_weighted_eigenvalue": min(
             r["smallest_eigenvalue"] for r in weighted_diagnostics
         ),
-        "fitted_order_range": "finest three levels: N=32,64,128",
+        "fitted_order_range": "finest three levels: N=128,256,512; Richardson estimates use the same three levels",
         "timing": "perf_counter; median of 5 individually measured assembly-plus-solve totals after one warm-up; sample min/max retained",
-        "cost_candidates": [4, 8, 16, 32, 64, 128],
+        "cost_candidates": [4, 8, 16, 32, 64, 128, 256, 512],
         "accuracy_targets_linf": [1e-2, 5e-3],
         "accuracy_selection": "coarsest tested grid meeting the target; not attained if none",
         "timing_includes": "assembly, COO/CSR/CSC conversion, ordering, LU factorisation and triangular solves",
@@ -761,4 +808,5 @@ def run_all(output_dir: Path) -> None:
     (output_dir / "run_metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     from reporting import write_report_material
     write_report_material(rows, fitted, weighted_diagnostics, energy_rows,
-                          cg_rows, algebraic, matched, metadata, output_dir)
+                          cg_rows, algebraic, matched, metadata, output_dir,
+                          weak_gmres, fem_rows, pure_rows)

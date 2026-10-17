@@ -104,45 +104,51 @@ def assemble_system(
     h = 1.0 / N
     beta = 0.0 if boundary == "neumann" else 2.0
     ndof = N * (N - 1)
-    rows: list[int] = []
-    cols: list[int] = []
-    vals: list[float] = []
-    b = np.empty(ndof, dtype=float)
+    ii = np.broadcast_to(np.arange(1, N + 1), (N - 1, N)).ravel()
+    jj = np.broadcast_to(np.arange(1, N)[:, None], (N - 1, N)).ravel()
+    kk = np.arange(ndof)
+    edge = ii == N
+    active_vertical = ~edge if closure == "first" else np.ones(ndof, dtype=bool)
 
-    def add_or_eliminate(k: int, i: int, j: int, coefficient: float, rhs: float) -> float:
-        if is_unknown(i, j, N):
-            rows.append(k)
-            cols.append(index(i, j, N))
-            vals.append(coefficient)
-        else:
-            if not (0 <= i <= N and 0 <= j <= N):
-                raise AssertionError("a retained stencil referenced an outside-grid node")
-            rhs -= coefficient * float(u_exact(i * h, j * h))
-        return rhs
+    def field(fn, x, y):
+        return np.broadcast_to(np.asarray(fn(x, y), dtype=float), np.broadcast(x, y).shape)
 
-    for j in range(1, N):
-        y = j * h
-        for i in range(1, N + 1):
-            k = index(i, j, N)
-            if i < N:
-                rhs = float(f_source(i * h, y))
-                stencil = ((i, j, 4.0 / h**2), (i - 1, j, -1.0 / h**2),
-                           (i + 1, j, -1.0 / h**2), (i, j - 1, -1.0 / h**2),
-                           (i, j + 1, -1.0 / h**2))
-            elif closure == "first":
-                rhs = float(s_boundary(y, boundary))
-                stencil = ((i, j, 1.0 / h + beta), (i - 1, j, -1.0 / h))
-            else:
-                rhs = float(f_source(1.0, y) + 2.0 * s_boundary(y, boundary) / h)
-                stencil = ((i, j, 4.0 / h**2 + 2.0 * beta / h),
-                           (i - 1, j, -2.0 / h**2),
-                           (i, j - 1, -1.0 / h**2),
-                           (i, j + 1, -1.0 / h**2))
-            for ni, nj, a in stencil:
-                rhs = add_or_eliminate(k, ni, nj, a, rhs)
-            b[k] = rhs
+    x, y = ii * h, jj * h
+    b = field(f_source, x, y).copy()
+    s = np.broadcast_to(np.asarray(s_boundary(y, boundary), dtype=float), b.shape)
+    if closure == "first":
+        b[edge] = s[edge]
+    else:
+        b[edge] += 2.0 * s[edge] / h
 
-    A = sparse.coo_matrix((vals, (rows, cols)), shape=(ndof, ndof)).tocsr()
+    diag = np.full(ndof, 4.0 / h**2)
+    diag[edge] = 1.0 / h + beta if closure == "first" else 4.0 / h**2 + 2.0 * beta / h
+    left = np.full(ndof, -1.0 / h**2)
+    left[edge] = -1.0 / h if closure == "first" else -2.0 / h**2
+    parts_r, parts_c, parts_v = [kk], [kk], [diag]
+
+    mask = ii > 1
+    parts_r.append(kk[mask]); parts_c.append(kk[mask] - 1); parts_v.append(left[mask])
+    mask = ii < N
+    parts_r.append(kk[mask]); parts_c.append(kk[mask] + 1)
+    parts_v.append(np.full(mask.sum(), -1.0 / h**2))
+    mask = active_vertical & (jj > 1)
+    parts_r.append(kk[mask]); parts_c.append(kk[mask] - N)
+    parts_v.append(np.full(mask.sum(), -1.0 / h**2))
+    mask = active_vertical & (jj < N - 1)
+    parts_r.append(kk[mask]); parts_c.append(kk[mask] + N)
+    parts_v.append(np.full(mask.sum(), -1.0 / h**2))
+
+    mask = ii == 1
+    b[mask] -= left[mask] * field(u_exact, np.zeros(mask.sum()), y[mask])
+    mask = active_vertical & (jj == 1)
+    b[mask] += field(u_exact, x[mask], np.zeros(mask.sum())) / h**2
+    mask = active_vertical & (jj == N - 1)
+    b[mask] += field(u_exact, x[mask], np.ones(mask.sum())) / h**2
+
+    A = sparse.coo_matrix((np.concatenate(parts_v),
+                           (np.concatenate(parts_r), np.concatenate(parts_c))),
+                          shape=(ndof, ndof)).tocsr()
     A.sum_duplicates()
     if A.shape != (ndof, ndof) or b.shape != (ndof,):
         raise AssertionError("assembled system has the wrong size")
@@ -172,15 +178,14 @@ def reconstruct(solution: np.ndarray, N: int, u_exact: ScalarField = exact_solut
     U[N, :] = u_exact(x, 1.0)
     U[:, 0] = u_exact(0.0, y)
     U[:, N] = u_exact(1.0, y)  # corners stay exact; open edge overwritten next
-    for j in range(1, N):
-        for i in range(1, N + 1):
-            U[j, i] = solution[index(i, j, N)]
+    U[1:N, 1:N + 1] = np.asarray(solution).reshape(N - 1, N)
     return U
 
 
 def exact_vector(N: int, u_exact: ScalarField = exact_solution) -> np.ndarray:
     h = 1.0 / N
-    return np.array([float(u_exact(i * h, j * h)) for j in range(1, N) for i in range(1, N + 1)])
+    x, y = np.meshgrid(np.arange(1, N + 1) * h, np.arange(1, N) * h)
+    return np.broadcast_to(np.asarray(u_exact(x, y), dtype=float), x.shape).ravel().copy()
 
 
 def componentwise_backward_error(A: sparse.spmatrix, x: np.ndarray, b: np.ndarray) -> float:

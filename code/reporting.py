@@ -36,14 +36,17 @@ def table(path, columns, header, rows, caption, label, size="small"):
 
 
 def write_report_material(rows, fitted, weighted, energy, cg_rows, algebraic,
-                          matched, metadata, destination: Path):
+                          matched, metadata, destination: Path, weak_gmres=None,
+                          fem_rows=None, pure_rows=None):
     labels = {"first": "FO", "ghost": "G"}
+    combined_refinement = []
     for boundary in ("neumann", "robin"):
         for closure in ("first", "ghost"):
             group = [r for r in rows if (r["boundary"], r["closure"]) == (boundary, closure)]
             records = [[r["N"], f"$1/{r['N']}$", sci(r["l2"]), decimal(r["order_l2"]),
                         sci(r["linf"]), decimal(r["order_linf"]), sci(r["residual_componentwise"], 2)]
                        for r in group]
+            combined_refinement.extend([[boundary.title(), labels[closure], *line] for line in records])
             table(destination / f"refinement_{boundary}_{closure}.tex", "rrrrrrr",
                   r"$N$ & $h$ & $E_{2,h}$ & $p_2$ & $E_{\infty,h}$ & $p_\infty$ & $\eta_{\rm cw}$",
                   records, f"{boundary.title()} data, {labels[closure]} closure: four-mesh errors and pairwise orders. "
@@ -57,12 +60,25 @@ def write_report_material(rows, fitted, weighted, energy, cg_rows, algebraic,
               f"{boundary.title()} data: error maxima restricted to the open right edge and the interior. "
               "This is a partition by node location, not an additive decomposition by error source.",
               f"tab:spatial-{boundary}")
+    table(destination / "refinement_combined.tex", "llrrrrrrr",
+          r"Boundary & Closure & $N$ & $h$ & $E_{2,h}$ & $p_2$ & $E_{\infty,h}$ & $p_\infty$ & $\eta_{\rm cw}$",
+          combined_refinement,
+          r"Global refinement errors for both boundary data and both closures; pairwise orders use adjacent grids.",
+          "tab:refinement-combined", "scriptsize")
+    table(destination / "spatial_combined.tex", "llrrrrr",
+          r"Boundary & Closure & $N$ & $E_{\infty,B}$ & $p_B$ & $E_{\infty,I}$ & $p_I$",
+          [[r["boundary"].title(), labels[r["closure"]], r["N"], sci(r["boundary_linf"]),
+            decimal(r["order_boundary_linf"]), sci(r["interior_linf"]),
+            decimal(r["order_interior_linf"])] for r in rows],
+          r"Spatially restricted maximum errors; this is not an additive source decomposition.",
+          "tab:spatial-combined", "scriptsize")
     table(destination / "fitted_global.tex", "llrrrrrr",
-          r"Boundary & Closure & $p_2$ & $R_2^2$ & $p_\infty$ & $R_\infty^2$ & $p_B$ & $p_I$",
-          [[r["boundary"].title(), labels[r["closure"]], decimal(r["fitted_order_l2"]), decimal(r["r_squared_l2"], 6),
-            decimal(r["fitted_order_linf"]), decimal(r["r_squared_linf"], 6),
-            decimal(r["fitted_order_boundary_linf"]), decimal(r["fitted_order_interior_linf"])] for r in fitted],
-          r"Least-squares fits on the identified fine-mesh range $N=32,64,128$. Pairwise orders are retained in the preceding refinement tables; $R^2$ measures fit quality rather than a confidence interval.",
+          r"Boundary & Closure & $p_2$ & $p_\infty$ & $p_B$ & $p_I$ & $p_{R,2}$ & $p_{R,\infty}$",
+          [[r["boundary"].title(), labels[r["closure"]], decimal(r["fitted_order_l2"]),
+            decimal(r["fitted_order_linf"]), decimal(r["fitted_order_boundary_linf"]),
+            decimal(r["fitted_order_interior_linf"]), decimal(r["richardson_order_l2"]),
+            decimal(r["richardson_order_linf"])] for r in fitted],
+          r"Least-squares slopes and Richardson difference-based estimates on $N=128,256,512$. Three points do not independently establish an asymptotic regime.",
           "tab:fitted-global", "footnotesize")
     table(destination / "matrix_structure.tex", "llrrrr",
           r"Boundary & Closure & $\delta_A$ & $\delta_K$ & $\lambda_{\min}(K)$ & Energy defect",
@@ -91,16 +107,42 @@ def write_report_material(rows, fitted, weighted, energy, cg_rows, algebraic,
             sci(r["original_componentwise_backward_error"], 2), sci(r["algebraic_to_discretisation_ratio"], 2)] for r in cg_rows],
           r"Jacobi-preconditioned CG on $K U=Wb$ at $N=64$, rtol $10^{-10}$, atol zero. All return status zero. The two residual columns distinguish weighted normwise and original componentwise measures.",
           "tab:cg-summary", "footnotesize")
+    if weak_gmres:
+        table(destination / "weak_gmres_summary.tex", "llrrrr",
+              r"Boundary & Closure & rtol & Iterations & $\eta_{\rm cw}$ & $\rho_{\rm alg}$",
+              [[r["boundary"].title(), labels[r["closure"]], sci(r["rtol"], 0),
+                r["iterations"], sci(r["componentwise_backward_error"], 2),
+                sci(r["algebraic_to_discretisation_ratio"], 2)] for r in weak_gmres],
+              r"Jacobi-preconditioned GMRES on the original matrix at $N=64$, without ILU factorisation.",
+              "tab:weak-gmres", "footnotesize")
+    if fem_rows:
+        table(destination / "fem_oracle_summary.tex", "llrrrr",
+              r"Boundary & Closure & $N$ & FEM error & FDM error & FDM--FEM difference",
+              [[r["boundary"].title(), labels[r["closure"]], r["N"],
+                sci(r["fem_linf_error"], 2), sci(r["fdm_linf_error"], 2),
+                sci(r["fdm_fem_linf_difference"], 2)] for r in fem_rows],
+              r"Independent P1 triangular FEM solution of the weak form in Section~\ref{sec:formulation}, compared at common grid vertices. Errors are nodal maxima against the manufactured exact solution; the difference is not itself an error bound.",
+              "tab:fem-oracle", "scriptsize")
+    if pure_rows:
+        table(destination / "pure_neumann_summary.tex", "llrrrr",
+              r"Closure & $N$ & $\|A\boldsymbol 1\|_\infty$ & Compatibility defect & Gauge error & Residual",
+              [[labels[r["closure"]], r["N"], sci(r["null_vector_defect_inf"], 1),
+                sci(r["discrete_compatibility_defect"], 2),
+                sci(r["gauge_solution_linf_error"], 2),
+                sci(r["bordered_residual_inf"], 1)] for r in pure_rows],
+              r"Pure-Neumann extension with all boundary vertices unknown. Compatibility uses a unit-sum left null vector; the bordered solve fixes arithmetic mean zero and applies the displayed scalar compatibility correction. This is a distinct depth experiment, not the mixed problem's matrix.",
+              "tab:pure-neumann", "scriptsize")
     costs = []
     for r in matched:
         passed = r["status"] == "attained"
         costs.append([r["boundary"].title(), sci(r["target_linf"], 0), labels[r["closure"]],
                       r["selected_N"] if passed else "--", sci(r["achieved_linf"]) if passed else "not reached",
-                      decimal(1000*r["total_seconds_median"]) if passed else "--",
-                      f"{1000*r['total_seconds_min']:.3f}--{1000*r['total_seconds_max']:.3f}" if passed else "--"])
-    table(destination / "matched_accuracy.tex", "lllr rrr".replace(" ", ""),
-          r"Boundary & Target & Closure & $N$ & $E_{\infty,h}$ & Median (ms) & Range (ms)", costs,
-          r"Cost at fixed nodal maximum-error thresholds, selecting the coarsest successful grid in $\{4,8,16,32,64,128\}$. Each range is the minimum--maximum of five measured assembly-plus-solve totals after one warm-up, not a confidence interval. A missing entry means the target was not attained within the candidate set.",
+                      f"{1000*r['assembly_seconds_median']:.2g}" if passed else "--",
+                      f"{1000*r['solve_seconds_median']:.2g}" if passed else "--",
+                      f"{1000*r['total_seconds_median']:.2g}" if passed else "--"])
+    table(destination / "matched_accuracy.tex", "lllrrrrr",
+          r"Boundary & Target & Closure & $N$ & $E_{\infty,h}$ & Assembly (ms) & Solve (ms) & Total (ms)", costs,
+          r"Coarsest successful grid in $\{4,8,16,32,64,128,256,512\}$. Separate assembly, solve, and complete-total medians are shown; their medians need not sum. Five samples follow a warm-up. Small-grid timings are noise sensitive.",
           "tab:matched-accuracy", "footnotesize")
     findings = []
     for boundary in ("neumann", "robin"):
@@ -111,15 +153,17 @@ def write_report_material(rows, fitted, weighted, energy, cg_rows, algebraic,
                 ratio = fo["total_seconds_median"] / gh["total_seconds_median"]
                 findings.append(f"For {boundary.title()} data at target {sci(target, 0)}, the selected FO/G grids are "
                                 f"$N={fo['selected_N']}$ and $N={gh['selected_N']}$; their measured median cost ratio "
-                                f"$T_{{\\rm FO}}/T_{{\\rm G}}$ is {ratio:.2f}. ")
+                                f"$T_{{\\rm FO}}/T_{{\\rm G}}$ is "
+                                f"{sci(ratio, 1) if ratio >= 100 else f'{ratio:.2g}'}. ")
             else:
                 findings.append(f"For {boundary.title()} data at target {sci(target, 0)}, FO does not meet the target "
-                                f"on any tested grid up to $N=128$, while G meets it at $N={gh['selected_N']}$. "
+                                f"on any tested grid up to $N=512$, while G meets it at $N={gh['selected_N']}$. "
                                 "No finite FO/G cost ratio is reported for this unattained case. ")
     (destination / "cost_findings.tex").write_text("\n\n".join(findings), encoding="utf-8")
     stats = {
         "RunPython": metadata["python"], "RunNumpy": metadata["numpy"],
         "RunScipy": metadata["scipy"], "RunMatplotlib": metadata["matplotlib"],
+        "RunScikitFem": metadata["scikit_fem"],
         "MaxDirectBackward": sci(max(r["residual_componentwise"] for r in rows), 2),
         "MaxGMRESLooseRatio": sci(max(r["algebraic_to_discretisation_ratio"] for r in algebraic if r["rtol"] == 1e-8), 2),
         "MaxGMRESTightRatio": sci(max(r["algebraic_to_discretisation_ratio"] for r in algebraic if r["rtol"] == 1e-12), 2),
@@ -208,21 +252,20 @@ def write_summary(rows, fitted, matched, metadata, findings, root):
     for f in fitted:
         r=next(r for r in rows if r['boundary']==f['boundary'] and r['closure']==f['closure'] and r['N']==128)
         lines.append(f"| {r['boundary']} | {r['closure']} | 128 | {r['linf']:.7e} | {r['l2']:.7e} | {f['fitted_order_linf']:.5f} | {f['fitted_order_l2']:.5f} |")
-    lines += ["", "Fits use N=32,64,128; all four-mesh values are retained in data/refinement_results.csv.", "",
+    lines += ["", "Fits use N=128,256,512; all six refinement grids are retained in data/refinement_results.csv.", "",
               "## Fixed-target cost comparison", "",
-              "Candidates: N=4,8,16,32,64,128. Targets in the same nodal maximum norm: 0.01 and 0.005.",
+              "Candidates: N=4,8,16,32,64,128,256,512. Targets in the same nodal maximum norm: 0.01 and 0.005.",
               "The coarsest tested successful grid is selected. Failure within this finite set is reported without extrapolation.", "",
               "Cost is the median of five individually measured assembly-plus-solve totals after a warm-up; minimum and maximum are also stored.",
               "It includes sparse conversions, ordering, factorisation and solve; it excludes validation, diagnostics, plotting and I/O.", ""]
     lines += [s.replace("$", "").replace("\\times", " x ").replace("\\rm ", "") for s in findings]
-    lines += ["", "These timings belong to this machine/run; regenerate them instead of treating the ratios as universal complexity results.",
-              "", "The retained report appendices concerning team activity/ICS/AI audit have not been revised in this task."]
+    lines += ["", "These timings belong to this machine/run; regenerate them instead of treating the ratios as universal complexity results."]
     (root / "RESULTS_SUMMARY.md").write_text("\n".join(lines)+"\n", encoding="utf-8")
 
 
 def refresh_from_saved_data(root):
     """Refresh typography/tables without repeating the benchmark timings."""
-    from make_figures import make_plots, make_tolerance_plot, make_weighted_energy_plots
+    from make_figures import make_plots, make_tolerance_plot, make_weighted_energy_plots, make_depth_plots
     destination=root/"generated"
     def convert(value):
         try:
@@ -238,11 +281,16 @@ def refresh_from_saved_data(root):
     energy=read("energy_convergence.csv")
     cg_rows=read("cg_comparison.csv")
     algebraic=read("algebraic_error_separation.csv")
+    weak_gmres=read("weak_gmres_comparison.csv")
+    fem_rows=read("fem_oracle_comparison.csv")
+    pure_rows=read("pure_neumann_depth.csv")
     matched=read("matched_accuracy.csv")
     metadata=json.loads((root/"data"/"run_metadata.json").read_text())
     make_plots(rows,destination,fitted)
     make_tolerance_plot(algebraic,destination)
     make_weighted_energy_plots(energy,cg_rows,destination)
-    write_report_material(rows,fitted,weighted,energy,cg_rows,algebraic,matched,metadata,destination)
+    make_depth_plots(fem_rows,pure_rows,destination)
+    write_report_material(rows,fitted,weighted,energy,cg_rows,algebraic,matched,metadata,
+                          destination,weak_gmres,fem_rows,pure_rows)
 
 

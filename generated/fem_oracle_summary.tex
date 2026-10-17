@@ -1,0 +1,29 @@
+\begin{table}[htbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrr}
+\toprule
+Boundary & Closure & $N$ & FEM error & FDM error & FDM--FEM difference \\
+\midrule
+Neumann & FO & 16 & $2.29\times10^{-3}$ & $5.83\times10^{-2}$ & $5.60\times10^{-2}$ \\
+Neumann & G & 16 & $2.29\times10^{-3}$ & $8.61\times10^{-4}$ & $3.15\times10^{-3}$ \\
+Neumann & FO & 32 & $5.74\times10^{-4}$ & $2.81\times10^{-2}$ & $2.76\times10^{-2}$ \\
+Neumann & G & 32 & $5.74\times10^{-4}$ & $2.16\times10^{-4}$ & $7.90\times10^{-4}$ \\
+Neumann & FO & 64 & $1.44\times10^{-4}$ & $1.38\times10^{-2}$ & $1.37\times10^{-2}$ \\
+Neumann & G & 64 & $1.44\times10^{-4}$ & $5.41\times10^{-5}$ & $1.98\times10^{-4}$ \\
+Neumann & FO & 128 & $3.59\times10^{-5}$ & $6.85\times10^{-3}$ & $6.82\times10^{-3}$ \\
+Neumann & G & 128 & $3.59\times10^{-5}$ & $1.35\times10^{-5}$ & $4.94\times10^{-5}$ \\
+Robin & FO & 16 & $7.21\times10^{-4}$ & $3.43\times10^{-2}$ & $3.36\times10^{-2}$ \\
+Robin & G & 16 & $7.21\times10^{-4}$ & $5.31\times10^{-4}$ & $1.25\times10^{-3}$ \\
+Robin & FO & 32 & $1.81\times10^{-4}$ & $1.69\times10^{-2}$ & $1.67\times10^{-2}$ \\
+Robin & G & 32 & $1.81\times10^{-4}$ & $1.33\times10^{-4}$ & $3.14\times10^{-4}$ \\
+Robin & FO & 64 & $4.53\times10^{-5}$ & $8.36\times10^{-3}$ & $8.31\times10^{-3}$ \\
+Robin & G & 64 & $4.53\times10^{-5}$ & $3.34\times10^{-5}$ & $7.86\times10^{-5}$ \\
+Robin & FO & 128 & $1.13\times10^{-5}$ & $4.16\times10^{-3}$ & $4.15\times10^{-3}$ \\
+Robin & G & 128 & $1.13\times10^{-5}$ & $8.34\times10^{-6}$ & $1.97\times10^{-5}$ \\
+\bottomrule
+\end{tabular}
+\caption{Independent P1 triangular FEM solution of the weak form in Section~\ref{sec:formulation}, compared at common grid vertices. Errors are nodal maxima against the manufactured exact solution; the difference is not itself an error bound.}
+\label{tab:fem-oracle}
+\end{table}

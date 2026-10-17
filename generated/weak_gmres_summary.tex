@@ -1,0 +1,21 @@
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrr}
+\toprule
+Boundary & Closure & rtol & Iterations & $\eta_{\rm cw}$ & $\rho_{\rm alg}$ \\
+\midrule
+Neumann & FO & $1\times10^{-8}$ & 452 & $7.19\times10^{-10}$ & $3.14\times10^{-4}$ \\
+Neumann & FO & $1\times10^{-10}$ & 588 & $1.23\times10^{-11}$ & $1.99\times10^{-6}$ \\
+Neumann & G & $1\times10^{-8}$ & 435 & $9.29\times10^{-10}$ & $7.40\times10^{-2}$ \\
+Neumann & G & $1\times10^{-10}$ & 582 & $1.23\times10^{-11}$ & $5.47\times10^{-4}$ \\
+Robin & FO & $1\times10^{-8}$ & 392 & $1.11\times10^{-9}$ & $2.46\times10^{-4}$ \\
+Robin & FO & $1\times10^{-10}$ & 518 & $1.31\times10^{-11}$ & $2.90\times10^{-6}$ \\
+Robin & G & $1\times10^{-8}$ & 393 & $1.10\times10^{-9}$ & $6.14\times10^{-2}$ \\
+Robin & G & $1\times10^{-10}$ & 519 & $1.13\times10^{-11}$ & $7.47\times10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\caption{Jacobi-preconditioned GMRES on the original matrix at $N=64$, without ILU factorisation.}
+\label{tab:weak-gmres}
+\end{table}

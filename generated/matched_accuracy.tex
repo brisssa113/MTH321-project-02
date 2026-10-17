@@ -2,20 +2,20 @@
 \centering
 \footnotesize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{lllrrrr}
+\begin{tabular}{lllrrrrr}
 \toprule
-Boundary & Target & Closure & $N$ & $E_{\infty,h}$ & Median (ms) & Range (ms) \\
+Boundary & Target & Closure & $N$ & $E_{\infty,h}$ & Assembly (ms) & Solve (ms) & Total (ms) \\
 \midrule
-Neumann & $1\times10^{-2}$ & FO & 128 & $6.853\times10^{-3}$ & 100.000 & 98.886--106.615 \\
-Neumann & $1\times10^{-2}$ & G & 8 & $3.377\times10^{-3}$ & 1.119 & 0.888--1.629 \\
-Neumann & $5\times10^{-3}$ & FO & -- & not reached & -- & -- \\
-Neumann & $5\times10^{-3}$ & G & 8 & $3.377\times10^{-3}$ & 1.119 & 0.888--1.629 \\
-Robin & $1\times10^{-2}$ & FO & 64 & $8.355\times10^{-3}$ & 22.096 & 20.647--22.663 \\
-Robin & $1\times10^{-2}$ & G & 4 & $7.326\times10^{-3}$ & 0.373 & 0.368--0.382 \\
-Robin & $5\times10^{-3}$ & FO & 128 & $4.159\times10^{-3}$ & 100.318 & 98.051--102.029 \\
-Robin & $5\times10^{-3}$ & G & 8 & $2.066\times10^{-3}$ & 0.822 & 0.815--1.339 \\
+Neumann & $1\times10^{-2}$ & FO & 128 & $6.853\times10^{-3}$ & 2.3 & 28 & 30 \\
+Neumann & $1\times10^{-2}$ & G & 8 & $3.377\times10^{-3}$ & 0.13 & 0.084 & 0.21 \\
+Neumann & $5\times10^{-3}$ & FO & 256 & $3.411\times10^{-3}$ & 9 & 1.7e+02 & 1.8e+02 \\
+Neumann & $5\times10^{-3}$ & G & 8 & $3.377\times10^{-3}$ & 0.13 & 0.084 & 0.21 \\
+Robin & $1\times10^{-2}$ & FO & 64 & $8.355\times10^{-3}$ & 0.44 & 5.5 & 5.9 \\
+Robin & $1\times10^{-2}$ & G & 4 & $7.326\times10^{-3}$ & 0.12 & 0.043 & 0.16 \\
+Robin & $5\times10^{-3}$ & FO & 128 & $4.159\times10^{-3}$ & 2.8 & 33 & 36 \\
+Robin & $5\times10^{-3}$ & G & 8 & $2.066\times10^{-3}$ & 0.15 & 0.1 & 0.25 \\
 \bottomrule
 \end{tabular}
-\caption{Cost at fixed nodal maximum-error thresholds, selecting the coarsest successful grid in $\{4,8,16,32,64,128\}$. Each range is the minimum--maximum of five measured assembly-plus-solve totals after one warm-up, not a confidence interval. A missing entry means the target was not attained within the candidate set.}
+\caption{Coarsest successful grid in $\{4,8,16,32,64,128,256,512\}$. Separate assembly, solve, and complete-total medians are shown; their medians need not sum. Five samples follow a warm-up. Small-grid timings are noise sensitive.}
 \label{tab:matched-accuracy}
 \end{table}

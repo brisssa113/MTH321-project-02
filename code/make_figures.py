@@ -11,6 +11,36 @@ import scipy
 
 from models import assemble_system
 
+
+def make_depth_plots(fem_rows: list[dict], pure_rows: list[dict], output_dir: Path) -> None:
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    for boundary in ("neumann", "robin"):
+        for closure, marker in (("first", "o-"), ("ghost", "s--")):
+            group = [r for r in fem_rows if (r["boundary"], r["closure"]) == (boundary, closure)]
+            ax.loglog([1 / r["N"] for r in group],
+                      [r["fdm_fem_linf_difference"] for r in group], marker,
+                      label=f"{boundary.title()} / {closure}")
+    ax.invert_xaxis(); ax.set_xlabel("h"); ax.set_ylabel("shared-node FDM–FEM max difference")
+    ax.set_xticks([1/16, 1/32, 1/64, 1/128], ["1/16", "1/32", "1/64", "1/128"])
+    ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+    ax.grid(True, which="both", alpha=.3); ax.legend(fontsize=9)
+    fig.tight_layout(); fig.savefig(output_dir / "fem_oracle.png", dpi=200); plt.close(fig)
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4.2))
+    for closure, marker in (("first", "o-"), ("ghost", "s--")):
+        group = [r for r in pure_rows if r["closure"] == closure]
+        h = [1 / r["N"] for r in group]
+        axes[0].loglog(h, [abs(r["discrete_compatibility_defect"]) for r in group],
+                       marker, label=closure)
+        axes[1].loglog(h, [r["gauge_solution_linf_error"] for r in group],
+                       marker, label=closure)
+    for ax, title in zip(axes, ("Compatibility defect", "Mean-zero solution error")):
+        ax.invert_xaxis(); ax.set_xlabel("h"); ax.set_title(title)
+        ax.set_xticks([1/8, 1/16, 1/32, 1/64], ["1/8", "1/16", "1/32", "1/64"])
+        ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
+        ax.grid(True, which="both", alpha=.3); ax.legend(fontsize=9)
+    fig.tight_layout(); fig.savefig(output_dir / "pure_neumann_depth.png", dpi=200); plt.close(fig)
+
 def make_plots(rows: list[dict], output_dir: Path, fitted: list[dict]) -> None:
     fit_map = {(r["boundary"], r["closure"]): r for r in fitted}
     styles = {("neumann", "first"): "o-", ("neumann", "ghost"): "s-",
@@ -23,7 +53,7 @@ def make_plots(rows: list[dict], output_dir: Path, fitted: list[dict]) -> None:
                       label=f"{label}, p={fit_map[key]['fitted_order_linf']:.3f}")
         axes[1].loglog([r["h"] for r in subset], [r["l2"] for r in subset], style,
                       label=f"{label}, p={fit_map[key]['fitted_order_l2']:.3f}")
-    ref_h = np.array([1/16, 1/32, 1/64, 1/128])
+    ref_h = np.array([r["h"] for r in rows if r["boundary"] == "neumann" and r["closure"] == "first"])
     for ax, metric in zip(axes, ("linf", "l2")):
         for closure, order in (("first", 1), ("ghost", 2)):
             anchor = next(r[metric] for r in rows if r["boundary"] == "neumann" and r["closure"] == closure and r["N"] == 64)
@@ -31,9 +61,12 @@ def make_plots(rows: list[dict], output_dir: Path, fitted: list[dict]) -> None:
                       color="0.45", linestyle=":" if order == 1 else "--",
                       linewidth=1, label=f"reference h^{order}")
     for ax, title in zip(axes, ("Global nodal max error", "Discrete L2 error")):
-        ax.set_xlabel("h"); ax.set_ylabel("error"); ax.set_title(title); ax.grid(True, which="both", alpha=.3); ax.legend(fontsize=11)
+        ax.set_xlabel("h"); ax.set_ylabel("error"); ax.set_title(title); ax.grid(True, which="both", alpha=.3)
+        ax.legend(fontsize=8, loc="upper left", bbox_to_anchor=(1.01, 1))
+        ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
         ax.invert_xaxis()
-    fig.tight_layout(); fig.savefig(output_dir / "convergence.png", dpi=200); plt.close(fig)
+    fig.set_size_inches(14, 4.5)
+    fig.tight_layout(); fig.savefig(output_dir / "convergence.png", dpi=200, bbox_inches="tight"); plt.close(fig)
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 4.5))
     for ax, closure in zip(axes, ("first", "ghost")):

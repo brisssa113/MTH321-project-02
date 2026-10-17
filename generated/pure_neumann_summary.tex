@@ -1,0 +1,21 @@
+\begin{table}[htbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrr}
+\toprule
+Closure & $N$ & $\|A\boldsymbol 1\|_\infty$ & Compatibility defect & Gauge error & Residual \\
+\midrule
+FO & 8 & $0$ & $1.61\times10^{-1}$ & $1.86\times10^{-1}$ & $1.2\times10^{-13}$ \\
+FO & 16 & $0$ & $8.01\times10^{-2}$ & $9.45\times10^{-2}$ & $6.7\times10^{-13}$ \\
+FO & 32 & $0$ & $4.00\times10^{-2}$ & $4.76\times10^{-2}$ & $8.9\times10^{-12}$ \\
+FO & 64 & $0$ & $2.00\times10^{-2}$ & $2.39\times10^{-2}$ & $2.9\times10^{-11}$ \\
+G & 8 & $0$ & $-7.70\times10^{-3}$ & $1.21\times10^{-2}$ & $2.1\times10^{-13}$ \\
+G & 16 & $0$ & $-1.92\times10^{-3}$ & $3.05\times10^{-3}$ & $6.8\times10^{-13}$ \\
+G & 32 & $0$ & $-4.81\times10^{-4}$ & $7.65\times10^{-4}$ & $4.4\times10^{-12}$ \\
+G & 64 & $0$ & $-1.20\times10^{-4}$ & $1.92\times10^{-4}$ & $1.9\times10^{-11}$ \\
+\bottomrule
+\end{tabular}
+\caption{Pure-Neumann extension with all boundary vertices unknown. Compatibility uses a unit-sum left null vector; the bordered solve fixes arithmetic mean zero and applies the displayed scalar compatibility correction. This is a distinct depth experiment, not the mixed problem's matrix.}
+\label{tab:pure-neumann}
+\end{table}

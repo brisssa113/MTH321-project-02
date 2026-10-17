@@ -4,14 +4,14 @@
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{llrrrrrr}
 \toprule
-Boundary & Closure & $p_2$ & $R_2^2$ & $p_\infty$ & $R_\infty^2$ & $p_B$ & $p_I$ \\
+Boundary & Closure & $p_2$ & $p_\infty$ & $p_B$ & $p_I$ & $p_{R,2}$ & $p_{R,\infty}$ \\
 \midrule
-Neumann & FO & 1.025 & 0.999977 & 1.019 & 0.999988 & 1.019 & 0.971 \\
-Neumann & G & 2.001 & 1.000000 & 1.999 & 1.000000 & 1.999 & 1.933 \\
-Robin & FO & 1.015 & 0.999991 & 1.009 & 0.999997 & 1.009 & 0.960 \\
-Robin & G & 2.002 & 1.000000 & 1.999 & 1.000000 & 1.999 & 1.918 \\
+Neumann & FO & 1.006 & 1.005 & 1.005 & 0.993 & 1.012 & 1.010 \\
+Neumann & G & 2.000 & 2.000 & 2.000 & 1.984 & 2.000 & 2.000 \\
+Robin & FO & 1.004 & 1.003 & 1.003 & 0.990 & 1.007 & 1.005 \\
+Robin & G & 2.000 & 2.000 & 2.000 & 1.980 & 2.000 & 2.000 \\
 \bottomrule
 \end{tabular}
-\caption{Least-squares fits on the identified fine-mesh range $N=32,64,128$. Pairwise orders are retained in the preceding refinement tables; $R^2$ measures fit quality rather than a confidence interval.}
+\caption{Least-squares slopes and Richardson difference-based estimates on $N=128,256,512$. Three points do not independently establish an asymptotic regime.}
 \label{tab:fitted-global}
 \end{table}

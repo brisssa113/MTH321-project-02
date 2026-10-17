@@ -1,9 +1,10 @@
 {
-  "python": "3.13.15",
+  "python": "3.12.14",
   "platform": "Windows-11-10.0.26200-SP0",
-  "numpy": "2.3.5",
-  "scipy": "1.17.0",
-  "matplotlib": "3.10.8",
+  "numpy": "2.5.4",
+  "scipy": "1.18.1",
+  "scikit_fem": "11.0.0",
+  "matplotlib": "3.11.2",
   "machine": "AMD64",
   "thread_environment": {
     "OMP_NUM_THREADS": "unset",
@@ -13,11 +14,14 @@
   "solver": "scipy.sparse.linalg.spsolve (SuperLU), CSC input, use_umfpack=False",
   "solver_tolerance": "N/A (sparse direct solver)",
   "algebraic_cross_check": "GMRES+ILU at rtol 1e-8, 1e-10, 1e-12; atol 0; N=64",
+  "weak_iterative_check": "Jacobi-preconditioned GMRES without factorisation; rtol 1e-8 and 1e-10; N=64",
   "weighted_matrix_check": "K=W*A with report weights; symmetry, smallest eigenvalue, and energy identity; N=32",
   "weighted_cg_check": "Jacobi-preconditioned CG on K=W*A; rtol 1e-10; atol 0; N=64",
+  "fem_oracle": "scikit-fem P1 triangles on shared Cartesian vertices, exact Dirichlet traces, report weak form; N=16,32,64,128",
+  "pure_neumann_depth": "all vertices unknown, FO derivative rows or centred ghost PDE rows, bordered arithmetic-mean-zero gauge; N=8,16,32,64",
   "maximum_weighted_symmetry_defect": 0.0,
   "minimum_weighted_eigenvalue": 11.609758814802998,
-  "fitted_order_range": "finest three levels: N=32,64,128",
+  "fitted_order_range": "finest three levels: N=128,256,512; Richardson estimates use the same three levels",
   "timing": "perf_counter; median of 5 individually measured assembly-plus-solve totals after one warm-up; sample min/max retained",
   "cost_candidates": [
     4,
@@ -25,7 +29,9 @@
     16,
     32,
     64,
-    128
+    128,
+    256,
+    512
   ],
   "accuracy_targets_linf": [
     0.01,
