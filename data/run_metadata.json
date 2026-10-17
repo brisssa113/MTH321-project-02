@@ -1,0 +1,46 @@
+{
+  "python": "3.13.15",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "numpy": "2.3.5",
+  "scipy": "1.17.0",
+  "matplotlib": "3.10.8",
+  "machine": "AMD64",
+  "thread_environment": {
+    "OMP_NUM_THREADS": "unset",
+    "OPENBLAS_NUM_THREADS": "unset",
+    "MKL_NUM_THREADS": "unset"
+  },
+  "solver": "scipy.sparse.linalg.spsolve (SuperLU), CSC input, use_umfpack=False",
+  "solver_tolerance": "N/A (sparse direct solver)",
+  "algebraic_cross_check": "GMRES+ILU at rtol 1e-8, 1e-10, 1e-12; atol 0; N=64",
+  "weighted_matrix_check": "K=W*A with report weights; symmetry, smallest eigenvalue, and energy identity; N=32",
+  "weighted_cg_check": "Jacobi-preconditioned CG on K=W*A; rtol 1e-10; atol 0; N=64",
+  "maximum_weighted_symmetry_defect": 0.0,
+  "minimum_weighted_eigenvalue": 11.609758814802998,
+  "fitted_order_range": "finest three levels: N=32,64,128",
+  "timing": "perf_counter; median of 5 individually measured assembly-plus-solve totals after one warm-up; sample min/max retained",
+  "cost_candidates": [
+    4,
+    8,
+    16,
+    32,
+    64,
+    128
+  ],
+  "accuracy_targets_linf": [
+    0.01,
+    0.005
+  ],
+  "accuracy_selection": "coarsest tested grid meeting the target; not attained if none",
+  "timing_includes": "assembly, COO/CSR/CSC conversion, ordering, LU factorisation and triangular solves",
+  "timing_excludes": "imports, warm-up, diagnostics, independent tests, extra Krylov/eigenvalue runs, plotting and file I/O",
+  "sanity_checks": {
+    "hand_derived_rows": "passed",
+    "manufactured_consistency": "passed",
+    "normal_and_ghost_elimination": "passed",
+    "corner_ownership_and_dimensions": "passed",
+    "affine_and_quadratic_independent_MMS": "passed",
+    "independent_dense_solve": "passed",
+    "four_mesh_convergence_trends": "passed"
+  }
+}
