@@ -1,0 +1,19 @@
+% Place this subsection at the end of sec:energy in the group's theory.tex.
+% It was removed from report/implementation.tex to preserve section order.
+\subsection{Solver implications of the proved matrix structure}
+\label{sec:solver-implications}
+
+The raw matrices are nonsymmetric and invertible. We use a sparse direct
+baseline through SciPy's \texttt{spsolve} interface~\cite{scipyspsolve},
+with CSC input and \texttt{use\_umfpack=False}, explicitly fixing the
+SuperLU backend. Each call includes a fresh factorisation; no factor is
+reused between timed repetitions.
+Multiplication by the invertible positive $W_h^c$ gives the equivalent
+system $K_h^c\boldsymbol U_h^c=W_h^c\boldsymbol b_h^c$.
+Proposition~\ref{prop:energy} proves the symmetry and positive
+definiteness required for CG~\cite{scipycg}. Its diagonal is positive
+because $(K_h^c)_{kk}=\boldsymbol e_k^TK_h^c\boldsymbol e_k>0$.
+Consequently, the Jacobi inverse
+$\operatorname{diag}(K_h^c)^{-1}$ is an admissible positive definite
+preconditioner. The baseline and cross-checks below test these solver
+choices; the structural proof alone makes no runtime claim.

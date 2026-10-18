@@ -29,7 +29,7 @@ python code/run_all.py
 python -m unittest discover -s code/tests -v
 ```
 
-The run updates `data/`, `figures/`, `generated/`, and `RESULTS_SUMMARY.md`. The saved run's software and platform information is recorded in `data/run_metadata.json`. Measured timings depend on the machine and may differ when regenerated.
+The bundled `data/`, `figures/`, and `generated/` correspond to the saved run used by the companion Overleaf report. Its software and platform information is recorded in `data/run_metadata.json` (Python 3.12.14). Running the entry point updates those directories and `RESULTS_SUMMARY.md`: measured timings and timing-derived plots, tables, and cost ratios can differ on another machine or Python version. Keep the saved outputs together when reproducing the report; do not mix them with only part of a new run.
 
 ## Using the report material
 
