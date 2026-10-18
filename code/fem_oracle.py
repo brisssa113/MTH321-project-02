@@ -57,7 +57,7 @@ def solve_mixed_fem(N: int, boundary: str) -> np.ndarray:
     return full
 
 
-def run_fem_comparison(output_dir: Path, grids=(16, 32, 64, 128)) -> list[dict]:
+def run_fem_comparison(output_dir: Path, grids=(16, 32, 64, 128, 256, 512)) -> list[dict]:
     rows = []
     for boundary in ("neumann", "robin"):
         for N in grids:
@@ -81,8 +81,14 @@ def run_fem_comparison(output_dir: Path, grids=(16, 32, 64, 128)) -> list[dict]:
                 current["fdm_fem_pairwise_order"] = float(np.log2(
                     previous["fdm_fem_linf_difference"] / current["fdm_fem_linf_difference"]
                 ))
+                current["fem_pairwise_order"] = float(np.log2(
+                    previous["fem_linf_error"] / current["fem_linf_error"]
+                ))
+    for r in rows:
+        r.setdefault("fdm_fem_pairwise_order", float("nan"))
+        r.setdefault("fem_pairwise_order", float("nan"))
     path = output_dir / "fem_oracle_comparison.csv"
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[-1]))
+        writer = csv.DictWriter(handle, fieldnames=["boundary", "closure", "N", "fem_linf_error", "fdm_linf_error", "fdm_fem_linf_difference", "fdm_fem_pairwise_order", "fem_pairwise_order"])
         writer.writeheader(); writer.writerows(rows)
     return rows

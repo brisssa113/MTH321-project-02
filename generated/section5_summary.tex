@@ -5,9 +5,9 @@
 \hline
 Boundary & Closure & $\|K-K^T\|_F/\|K\|_F$ & $\lambda_{\min}(K)$ & Energy identity defect \\
 \hline
-Neumann & First & 0.00e+00 & 11.6098 & 0.00e+00 \\
-Neumann & Ghost & 0.00e+00 & 11.9409 & 1.19e-16 \\
-Robin & First & 0.00e+00 & 14.7168 & 1.14e-16 \\
+Neumann & First & 0.00e+00 & 11.6098 & 1.17e-16 \\
+Neumann & Ghost & 0.00e+00 & 11.9409 & 0.00e+00 \\
+Robin & First & 0.00e+00 & 14.7168 & 0.00e+00 \\
 Robin & Ghost & 0.00e+00 & 14.8745 & 2.33e-16 \\
 \hline
 \end{tabular}
@@ -20,15 +20,15 @@ Robin & Ghost & 0.00e+00 & 14.8745 & 2.33e-16 \\
 \small
 \begin{tabular}{llrrr}
 \hline
-Boundary & Closure & $E_{E,h}$ at $N=128$ & Fitted order & $R^2$ \\
+Boundary & Closure & $E_{E,h}$ at $N=512$ & Fitted order & $R^2$ \\
 \hline
-Neumann & First & 9.581e-03 & 1.010 & 0.999997 \\
-Neumann & Ghost & 2.018e-05 & 1.997 & 1.000000 \\
-Robin & First & 7.596e-03 & 1.005 & 1.000000 \\
-Robin & Ghost & 1.647e-05 & 1.996 & 1.000000 \\
+Neumann & First & 2.386e-03 & 1.003 & 1.000000 \\
+Neumann & Ghost & 1.262e-06 & 2.000 & 1.000000 \\
+Robin & First & 1.894e-03 & 1.002 & 1.000000 \\
+Robin & Ghost & 1.030e-06 & 2.000 & 1.000000 \\
 \hline
 \end{tabular}
-\caption{Weighted-energy errors and fitted orders on the finest three levels, $N=32,64,128$.}
+\caption{Weighted-energy errors and fitted orders on the finest three levels, $N=128,256,512$.}
 \label{tab:energy-convergence}
 \end{table}
 

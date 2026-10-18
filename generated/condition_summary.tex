@@ -1,0 +1,29 @@
+\begin{table}[htbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrrrr}
+\toprule
+Boundary & Closure & $N$ & $\|A^{-1}\|_\infty$ & $\kappa_\infty$ & $\|A^{-1}\|_\infty\|r\|_\infty$ & Bound$/E_{\infty,h}$ & Round-off scale \\
+\midrule
+Neumann & FO & 16 & 0.5138 & $1.05\times10^{3}$ & $1.06\times10^{-12}$ & $1.81\times10^{-11}$ & $1.63\times10^{-12}$ \\
+Neumann & FO & 32 & 0.4986 & $4.08\times10^{3}$ & $5.99\times10^{-12}$ & $2.13\times10^{-10}$ & $6.50\times10^{-12}$ \\
+Neumann & FO & 64 & 0.4911 & $1.61\times10^{4}$ & $6.13\times10^{-11}$ & $4.43\times10^{-9}$ & $2.60\times10^{-11}$ \\
+Neumann & FO & 128 & 0.4873 & $6.39\times10^{4}$ & $1.41\times10^{-10}$ & $2.06\times10^{-8}$ & $1.04\times10^{-10}$ \\
+Neumann & G & 16 & 0.1138 & $2.33\times10^{2}$ & $2.33\times10^{-13}$ & $2.70\times10^{-10}$ & $3.59\times10^{-13}$ \\
+Neumann & G & 32 & 0.1138 & $9.33\times10^{2}$ & $1.04\times10^{-12}$ & $4.79\times10^{-9}$ & $1.48\times10^{-12}$ \\
+Neumann & G & 64 & 0.1139 & $3.73\times10^{3}$ & $1.08\times10^{-11}$ & $1.99\times10^{-7}$ & $6.03\times10^{-12}$ \\
+Neumann & G & 128 & 0.1139 & $1.49\times10^{4}$ & $3.65\times10^{-11}$ & $2.69\times10^{-6}$ & $2.43\times10^{-11}$ \\
+Robin & FO & 16 & 0.2940 & $6.02\times10^{2}$ & $4.68\times10^{-13}$ & $1.36\times10^{-11}$ & $9.31\times10^{-13}$ \\
+Robin & FO & 32 & 0.2913 & $2.39\times10^{3}$ & $2.44\times10^{-12}$ & $1.45\times10^{-10}$ & $3.80\times10^{-12}$ \\
+Robin & FO & 64 & 0.2899 & $9.50\times10^{3}$ & $1.75\times10^{-11}$ & $2.09\times10^{-9}$ & $1.53\times10^{-11}$ \\
+Robin & FO & 128 & 0.2892 & $3.79\times10^{4}$ & $9.75\times10^{-11}$ & $2.34\times10^{-8}$ & $6.17\times10^{-11}$ \\
+Robin & G & 16 & 0.0913 & $1.93\times10^{2}$ & $2.03\times10^{-13}$ & $3.82\times10^{-10}$ & $2.97\times10^{-13}$ \\
+Robin & G & 32 & 0.0914 & $7.61\times10^{2}$ & $9.15\times10^{-13}$ & $6.87\times10^{-9}$ & $1.21\times10^{-12}$ \\
+Robin & G & 64 & 0.0915 & $3.02\times10^{3}$ & $6.99\times10^{-12}$ & $2.10\times10^{-7}$ & $4.88\times10^{-12}$ \\
+Robin & G & 128 & 0.0915 & $1.20\times10^{4}$ & $2.36\times10^{-11}$ & $2.83\times10^{-6}$ & $1.96\times10^{-11}$ \\
+\bottomrule
+\end{tabular}
+\caption{Conditioning of the direct solve. $\|A^{-1}\|_\infty$ is estimated with Higham's one-norm estimator on the SuperLU factors; $\kappa_\infty=\|A\|_\infty\|A^{-1}\|_\infty$. The forward-error bound $\|U-U_h\|_\infty\le\|A^{-1}\|_\infty\|r\|_\infty$ is compared with the discretisation error. The round-off scale is $\kappa_\infty\,\varepsilon_{\rm mach}\|U\|_\infty$.}
+\label{tab:condition}
+\end{table}

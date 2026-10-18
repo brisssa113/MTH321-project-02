@@ -20,7 +20,7 @@ plt.rcParams.update({"font.size": 13, "axes.labelsize": 13,
 import numpy as np
 import scipy
 import skfem
-from scipy.sparse.linalg import LinearOperator, cg, eigsh, gmres, spilu
+from scipy.sparse.linalg import LinearOperator, cg, eigsh, gmres, onenormest, spilu, splu
 
 from models import (
     assemble_system,
@@ -152,7 +152,10 @@ def run_sanity_checks() -> dict[str, str]:
     }
 
 
-def _timed_medians(N: int, boundary: str, closure: str, repeats: int = 5):
+def _timed_medians(N: int, boundary: str, closure: str, repeats: int | None = None):
+    # Sub-millisecond runs are noise dominated, so small grids get more samples.
+    if repeats is None:
+        repeats = 25 if N <= 32 else 5
     run_case(N, boundary, closure)  # warm-up excluded
     assembly_times, solve_times, total_times = [], [], []
     representative = None
@@ -209,7 +212,7 @@ def choose_accuracy_case(rows: list[dict], target: float):
 
 
 def run_matched_accuracy(output_dir: Path, refinement_rows: list[dict],
-                         targets=(1e-2, 5e-3)) -> list[dict]:
+                         targets=(5e-3, 2e-3, 1e-3, 1e-4, 1e-5)) -> list[dict]:
     """Fixed-target study; never extrapolate beyond the tested candidates."""
     candidates = [dict(r) for r in refinement_rows]
     for boundary in ("neumann", "robin"):
@@ -383,9 +386,9 @@ def run_weighted_matrix_diagnostics(output_dir: Path, N: int = 32) -> list[dict]
 
 
 def run_energy_convergence(
-    output_dir: Path, grids=(16, 32, 64, 128)
+    output_dir: Path, grids=(16, 32, 64, 128, 256, 512)
 ) -> list[dict]:
-    """Measure the report-defined weighted energy norm on four meshes."""
+    """Measure the report-defined weighted energy norm on the six refinement meshes."""
     records: list[dict] = []
     for boundary in ("neumann", "robin"):
         for closure in ("first", "ghost"):
@@ -585,8 +588,76 @@ def run_algebraic_error_separation(
     return records
 
 
+def inverse_inf_norm_estimate(A) -> float:
+    """Estimate ||A^{-1}||_inf = ||A^{-T}||_1 with Higham's 1-norm estimator.
+
+    The estimate is a lower bound that is almost always within a small factor
+    of the true value; ``tests/test_condition.py`` checks it against a dense
+    inverse on small grids.
+    """
+    lu = splu(A.tocsc())
+    n = A.shape[0]
+    operator = LinearOperator(
+        (n, n), dtype=float,
+        matvec=lambda v: lu.solve(np.asarray(v, dtype=float), trans="T"),
+        rmatvec=lambda v: lu.solve(np.asarray(v, dtype=float)),
+        matmat=lambda V: lu.solve(np.asarray(V, dtype=float), trans="T"),
+        rmatmat=lambda V: lu.solve(np.asarray(V, dtype=float)),
+    )
+    return float(onenormest(operator))
+
+
+def run_condition_estimates(output_dir: Path, grids=(16, 32, 64, 128)) -> list[dict]:
+    """Bound the forward error of the direct solve through a conditioning estimate.
+
+    For the computed solution U and residual r = b - A U, the exact relation
+    U - U_exact_discrete = A^{-1} r gives the rigorous bound
+    ||U - U_h||_inf <= ||A^{-1}||_inf ||r||_inf, evaluated with the estimated
+    ||A^{-1}||_inf.  The same estimate gives the residual that an iterative
+    solver must reach for its error to stay below 1% of the discretisation error.
+    """
+    records: list[dict] = []
+    eps = float(np.finfo(float).eps)
+    for boundary in ("neumann", "robin"):
+        for closure in ("first", "ghost"):
+            for N in grids:
+                case = run_case(N, boundary, closure)
+                A, b, U = case.assembly.A, case.assembly.b, case.solution
+                inv_norm = inverse_inf_norm_estimate(A)
+                a_norm = float(np.max(np.asarray(abs(A).sum(axis=1)).ravel()))
+                residual = float(np.linalg.norm(b - A @ U, ord=np.inf))
+                u_norm = float(np.linalg.norm(U, ord=np.inf))
+                b_norm = float(np.linalg.norm(b, ord=np.inf))
+                discretisation = case.diagnostics.linf
+                records.append({
+                    "boundary": boundary, "closure": closure, "N": N,
+                    "ndof": A.shape[0],
+                    "norm_A_inf": a_norm,
+                    "inverse_norm_inf_estimate": inv_norm,
+                    "condition_inf_estimate": a_norm * inv_norm,
+                    "residual_inf": residual,
+                    "forward_error_bound_inf": inv_norm * residual,
+                    "discretisation_error_linf": discretisation,
+                    "bound_to_discretisation_ratio": inv_norm * residual / discretisation,
+                    "roundoff_scale_estimate": a_norm * inv_norm * eps * u_norm,
+                    "required_relative_residual": 1e-2 * discretisation / (inv_norm * b_norm),
+                })
+    with (output_dir / "condition_estimates.csv").open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(records[0]))
+        writer.writeheader()
+        writer.writerows(records)
+    return records
+
+
 def run_weak_gmres_check(output_dir: Path, N: int = 64) -> list[dict]:
-    """A genuinely iterative check using only Jacobi, with no ILU factorisation."""
+    """A genuinely iterative check using only Jacobi, with no ILU factorisation.
+
+    Besides the algebraic/discretisation ratio, each run records the relative
+    residual ||r||_inf/||b||_inf and the residual level
+    1e-2 E_inf/(||A^{-1}||_inf ||b||_inf) that suffices for a ratio below 1e-2.
+    The rule is sufficient, not necessary: it is reported next to the observed
+    ratio so that prediction and outcome can be compared.
+    """
     records = []
     for boundary in ("neumann", "robin"):
         for closure in ("first", "ghost"):
@@ -594,7 +665,11 @@ def run_weak_gmres_check(output_dir: Path, N: int = 64) -> list[dict]:
             A, b = case.assembly.A, case.assembly.b
             diagonal = A.diagonal()
             M = LinearOperator(A.shape, matvec=lambda v: v / diagonal)
-            for rtol in (1e-8, 1e-10):
+            inverse_norm = inverse_inf_norm_estimate(A)
+            b_norm = float(np.linalg.norm(b, ord=np.inf))
+            discretisation = case.diagnostics.linf
+            required = 1e-2 * discretisation / (inverse_norm * b_norm)
+            for rtol in (1e-8, 1e-10, 1e-12):
                 history = []
                 iterative, status = gmres(
                     A, b, x0=np.zeros_like(b), M=M, rtol=rtol, atol=0.0,
@@ -604,12 +679,17 @@ def run_weak_gmres_check(output_dir: Path, N: int = 64) -> list[dict]:
                 if status != 0:
                     raise RuntimeError(f"Jacobi GMRES failed: {boundary}/{closure}, {rtol}, {status}")
                 difference = float(np.linalg.norm(iterative - case.solution, ord=np.inf))
-                discretisation = case.diagnostics.linf
+                relative_residual = float(np.linalg.norm(b - A @ iterative, ord=np.inf) / b_norm)
+                ratio = difference / discretisation
                 records.append({
                     "boundary": boundary, "closure": closure, "N": N,
                     "rtol": rtol, "iterations": len(history), "exit_status": status,
                     "componentwise_backward_error": componentwise_backward_error(A, iterative, b),
-                    "algebraic_to_discretisation_ratio": difference / discretisation,
+                    "algebraic_to_discretisation_ratio": ratio,
+                    "meets_acceptance": bool(ratio < 1e-2),
+                    "relative_residual_inf": relative_residual,
+                    "required_relative_residual": required,
+                    "residual_rule_satisfied": bool(relative_residual <= required),
                 })
     with (output_dir / "weak_gmres_comparison.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(records[0]))
@@ -702,7 +782,7 @@ def write_section5_summary(
         r"\small",
         r"\begin{tabular}{llrrr}",
         r"\hline",
-        r"Boundary & Closure & $E_{E,h}$ at $N=128$ & Fitted order & $R^2$ \\",
+        r"Boundary & Closure & $E_{E,h}$ at $N=512$ & Fitted order & $R^2$ \\",
         r"\hline",
     ])
     for boundary in ("neumann", "robin"):
@@ -721,7 +801,7 @@ def write_section5_summary(
     lines.extend([
         r"\hline",
         r"\end{tabular}",
-        r"\caption{Weighted-energy errors and fitted orders on the finest three levels, $N=32,64,128$.}",
+        r"\caption{Weighted-energy errors and fitted orders on the finest three levels, $N=128,256,512$.}",
         r"\label{tab:energy-convergence}",
         r"\end{table}",
         "",
@@ -759,6 +839,7 @@ def run_all(output_dir: Path) -> None:
     fitted = write_fitted_orders(rows, output_dir)
     algebraic = run_algebraic_error_separation(output_dir)
     weak_gmres = run_weak_gmres_check(output_dir)
+    condition_rows = run_condition_estimates(output_dir)
     weighted_diagnostics = run_weighted_matrix_diagnostics(output_dir)
     energy_rows = run_energy_convergence(output_dir)
     cg_rows = run_cg_comparison(output_dir)
@@ -783,13 +864,14 @@ def run_all(output_dir: Path) -> None:
         "solver": "scipy.sparse.linalg.spsolve (SuperLU), CSC input, use_umfpack=False",
         "solver_tolerance": "N/A (sparse direct solver)",
         "algebraic_cross_check": "GMRES+ILU at rtol 1e-8, 1e-10, 1e-12; atol 0; N=64",
-        "weak_iterative_check": "Jacobi-preconditioned GMRES without factorisation; rtol 1e-8 and 1e-10; N=64",
+        "weak_iterative_check": "Jacobi-preconditioned GMRES without factorisation; rtol 1e-8, 1e-10, 1e-12; N=64",
+        "condition_estimate": "Higham 1-norm estimator of ||A^-1||_inf via SuperLU factors; N=16,32,64,128",
         "weighted_matrix_check": (
             "K=W*A with report weights; symmetry, smallest eigenvalue, and energy identity; N=32"
         ),
         "weighted_cg_check": "Jacobi-preconditioned CG on K=W*A; rtol 1e-10; atol 0; N=64",
-        "fem_oracle": "scikit-fem P1 triangles on shared Cartesian vertices, exact Dirichlet traces, report weak form; N=16,32,64,128",
-        "pure_neumann_depth": "all vertices unknown, FO derivative rows or centred ghost PDE rows, bordered arithmetic-mean-zero gauge; N=8,16,32,64",
+        "fem_oracle": "scikit-fem P1 triangles on shared Cartesian vertices, exact Dirichlet traces, report weak form; N=16,32,64,128,256,512",
+        "pure_neumann_depth": "all vertices unknown, FO derivative rows or centred ghost PDE rows, bordered arithmetic-mean-zero gauge and a row-scaled compatibility correction; N=8,16,32,64,128",
         "maximum_weighted_symmetry_defect": max(
             r["weighted_asymmetry_frobenius"] for r in weighted_diagnostics
         ),
@@ -797,9 +879,9 @@ def run_all(output_dir: Path) -> None:
             r["smallest_eigenvalue"] for r in weighted_diagnostics
         ),
         "fitted_order_range": "finest three levels: N=128,256,512; Richardson estimates use the same three levels",
-        "timing": "perf_counter; median of 5 individually measured assembly-plus-solve totals after one warm-up; sample min/max retained",
+        "timing": "perf_counter; median of individually measured assembly-plus-solve totals after one warm-up (25 samples for N<=32, 5 samples otherwise); sample min/max retained",
         "cost_candidates": [4, 8, 16, 32, 64, 128, 256, 512],
-        "accuracy_targets_linf": [1e-2, 5e-3],
+        "accuracy_targets_linf": [5e-3, 2e-3, 1e-3, 1e-4, 1e-5],
         "accuracy_selection": "coarsest tested grid meeting the target; not attained if none",
         "timing_includes": "assembly, COO/CSR/CSC conversion, ordering, LU factorisation and triangular solves",
         "timing_excludes": "imports, warm-up, diagnostics, independent tests, extra Krylov/eigenvalue runs, plotting and file I/O",
@@ -809,4 +891,4 @@ def run_all(output_dir: Path) -> None:
     from reporting import write_report_material
     write_report_material(rows, fitted, weighted_diagnostics, energy_rows,
                           cg_rows, algebraic, matched, metadata, output_dir,
-                          weak_gmres, fem_rows, pure_rows)
+                          weak_gmres, fem_rows, pure_rows, condition_rows)

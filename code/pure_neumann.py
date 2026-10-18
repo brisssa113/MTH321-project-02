@@ -75,6 +75,42 @@ def continuum_compatibility_quadrature(N: int) -> float:
     return float(volume + flux)
 
 
+def left_null_vector(A):
+    """Unit-sum left null vector w (w^T A = 0, sum(w) = 1) of a singular A."""
+    n = A.shape[0]
+    ones = np.ones(n)
+    column = sparse.csr_matrix(ones[:, None])
+    row = sparse.csr_matrix(ones[None, :])
+    zero = sparse.csr_matrix((1, 1))
+    left_border = sparse.bmat([[A.T, column], [row, zero]], format="csc")
+    return spsolve(left_border, np.r_[np.zeros(n), 1.0])[:n]
+
+
+def scaled_correction_solve(A, b):
+    """Mean-zero solve after removing the compatibility defect row-proportionally.
+
+    The bordered solve of ``gauge_solve`` adds the same scalar correction to
+    every equation, although the rows of A have different scales (h^-2 for
+    PDE rows, about h^-1 for first-order derivative rows).  Here the defect
+    w^T b is removed with a correction proportional to |diag(A)|, so that each
+    row is perturbed in proportion to its own scale:
+    b_c = b - (w^T b / w^T g) g, g = |diag(A)|.  Then w^T b_c = 0 and
+    A U = b_c is consistent; the mean-zero solution is returned.
+    """
+    n = A.shape[0]
+    w = left_null_vector(A)
+    g = np.abs(A.diagonal())
+    scale = float(w @ b) / float(w @ g)
+    corrected = b - scale * g
+    ones = np.ones(n)
+    column = sparse.csr_matrix(ones[:, None])
+    row = sparse.csr_matrix(ones[None, :])
+    zero = sparse.csr_matrix((1, 1))
+    border = sparse.bmat([[A, column], [row, zero]], format="csc")
+    solved = spsolve(border, np.r_[corrected, 0.0])
+    return solved[:n], float(solved[-1]), float(np.max(np.abs(scale * g)))
+
+
 def gauge_solve(A, b):
     """Compute left-null compatibility and a mean-zero bordered solve."""
     n = A.shape[0]
@@ -82,8 +118,7 @@ def gauge_solve(A, b):
     column = sparse.csr_matrix(ones[:, None])
     row = sparse.csr_matrix(ones[None, :])
     zero = sparse.csr_matrix((1, 1))
-    left_border = sparse.bmat([[A.T, column], [row, zero]], format="csc")
-    left_null = spsolve(left_border, np.r_[np.zeros(n), 1.0])[:n]
+    left_null = left_null_vector(A)
     defect = float(left_null @ b)
     right_border = sparse.bmat([[A, column], [row, zero]], format="csc")
     solved = spsolve(right_border, np.r_[b, 0.0])
@@ -91,7 +126,7 @@ def gauge_solve(A, b):
     return u, defect, lagrange, float(np.linalg.norm(A.T @ left_null, ord=np.inf))
 
 
-def run_pure_neumann(output_dir: Path, grids=(8, 16, 32, 64)) -> list[dict]:
+def run_pure_neumann(output_dir: Path, grids=(8, 16, 32, 64, 128)) -> list[dict]:
     records = []
     for closure in ("first", "ghost"):
         for N in grids:
@@ -101,6 +136,7 @@ def run_pure_neumann(output_dir: Path, grids=(8, 16, 32, 64)) -> list[dict]:
             xx, yy = np.meshgrid(np.linspace(0, 1, N + 1), np.linspace(0, 1, N + 1))
             exact = exact_solution(xx, yy).ravel()
             exact -= np.mean(exact)
+            u_scaled, scaled_mu, scaled_max_change = scaled_correction_solve(A, b)
             records.append({
                 "closure": closure, "N": N, "ndof": A.shape[0],
                 "null_vector_defect_inf": null_defect,
@@ -110,6 +146,9 @@ def run_pure_neumann(output_dir: Path, grids=(8, 16, 32, 64)) -> list[dict]:
                 "continuum_quadrature_defect": continuum_compatibility_quadrature(N),
                 "gauge_mean": float(np.mean(u)),
                 "gauge_solution_linf_error": float(np.max(np.abs(u - exact))),
+                "ghost_defect_minus_quadrature": compatibility - continuum_compatibility_quadrature(N),
+                "scaled_correction_solution_linf_error": float(np.max(np.abs(u_scaled - exact))),
+                "scaled_correction_max_row_change": scaled_max_change,
                 "bordered_residual_inf": float(np.linalg.norm(A @ u + lagrange - b, ord=np.inf)),
             })
     path = output_dir / "pure_neumann_depth.csv"

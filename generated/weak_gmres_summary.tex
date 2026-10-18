@@ -1,21 +1,25 @@
 \begin{table}[htbp]
 \centering
-\footnotesize
+\scriptsize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{llrrrr}
+\begin{tabular}{llrrrrrl}
 \toprule
-Boundary & Closure & rtol & Iterations & $\eta_{\rm cw}$ & $\rho_{\rm alg}$ \\
+Boundary & Closure & rtol & Iterations & $\rho_{\rm alg}$ & $\|r\|_\infty/\|b\|_\infty$ & Required & Rule met \\
 \midrule
-Neumann & FO & $1\times10^{-8}$ & 452 & $7.19\times10^{-10}$ & $3.14\times10^{-4}$ \\
-Neumann & FO & $1\times10^{-10}$ & 588 & $1.23\times10^{-11}$ & $1.99\times10^{-6}$ \\
-Neumann & G & $1\times10^{-8}$ & 435 & $9.29\times10^{-10}$ & $7.40\times10^{-2}$ \\
-Neumann & G & $1\times10^{-10}$ & 582 & $1.23\times10^{-11}$ & $5.47\times10^{-4}$ \\
-Robin & FO & $1\times10^{-8}$ & 392 & $1.11\times10^{-9}$ & $2.46\times10^{-4}$ \\
-Robin & FO & $1\times10^{-10}$ & 518 & $1.31\times10^{-11}$ & $2.90\times10^{-6}$ \\
-Robin & G & $1\times10^{-8}$ & 393 & $1.10\times10^{-9}$ & $6.14\times10^{-2}$ \\
-Robin & G & $1\times10^{-10}$ & 519 & $1.13\times10^{-11}$ & $7.47\times10^{-4}$ \\
+Neumann & FO & $1\times10^{-8}$ & 452 & $3.14\times10^{-4}$ & $2.67\times10^{-9}$ & $9.46\times10^{-9}$ & yes \\
+Neumann & FO & $1\times10^{-10}$ & 588 & $1.99\times10^{-6}$ & $4.04\times10^{-11}$ & $9.46\times10^{-9}$ & yes \\
+Neumann & FO & $1\times10^{-12}$ & 718 & $2.18\times10^{-8}$ & $3.23\times10^{-13}$ & $9.46\times10^{-9}$ & yes \\
+Neumann & G & $1\times10^{-8}$ & 435 & $7.40\times10^{-2}$ & $2.62\times10^{-9}$ & $1.52\times10^{-10}$ & no \\
+Neumann & G & $1\times10^{-10}$ & 582 & $5.47\times10^{-4}$ & $3.25\times10^{-11}$ & $1.52\times10^{-10}$ & yes \\
+Neumann & G & $1\times10^{-12}$ & 712 & $5.00\times10^{-6}$ & $2.89\times10^{-13}$ & $1.52\times10^{-10}$ & yes \\
+Robin & FO & $1\times10^{-8}$ & 392 & $2.46\times10^{-4}$ & $2.72\times10^{-9}$ & $9.68\times10^{-9}$ & yes \\
+Robin & FO & $1\times10^{-10}$ & 518 & $2.90\times10^{-6}$ & $3.83\times10^{-11}$ & $9.68\times10^{-9}$ & yes \\
+Robin & FO & $1\times10^{-12}$ & 679 & $6.13\times10^{-9}$ & $6.90\times10^{-14}$ & $9.68\times10^{-9}$ & yes \\
+Robin & G & $1\times10^{-8}$ & 393 & $6.14\times10^{-2}$ & $2.47\times10^{-9}$ & $1.10\times10^{-10}$ & no \\
+Robin & G & $1\times10^{-10}$ & 519 & $7.47\times10^{-4}$ & $2.99\times10^{-11}$ & $1.10\times10^{-10}$ & yes \\
+Robin & G & $1\times10^{-12}$ & 647 & $9.42\times10^{-6}$ & $2.30\times10^{-13}$ & $1.10\times10^{-10}$ & yes \\
 \bottomrule
 \end{tabular}
-\caption{Jacobi-preconditioned GMRES on the original matrix at $N=64$, without ILU factorisation.}
+\caption{Jacobi-preconditioned GMRES on the original matrix at $N=64$, without ILU factorisation. ``Required'' is $10^{-2}E_{\infty,h}/(\|A^{-1}\|_\infty\|b\|_\infty)$, the relative residual that guarantees $\rho_{\rm alg}<10^{-2}$; the rule is sufficient, not necessary.}
 \label{tab:weak-gmres}
 \end{table}

@@ -2,20 +2,22 @@
 \centering
 \scriptsize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{llrrrr}
+\begin{tabular}{llrrrrrr}
 \toprule
-Closure & $N$ & $\|A\boldsymbol 1\|_\infty$ & Compatibility defect & Gauge error & Residual \\
+Closure & $N$ & $\|A\boldsymbol 1\|_\infty$ & Defect $w^Tb$ & Trapezoid defect & Gauge error (uniform) & Gauge error (row-scaled) & Residual \\
 \midrule
-FO & 8 & $0$ & $1.61\times10^{-1}$ & $1.86\times10^{-1}$ & $1.2\times10^{-13}$ \\
-FO & 16 & $0$ & $8.01\times10^{-2}$ & $9.45\times10^{-2}$ & $6.7\times10^{-13}$ \\
-FO & 32 & $0$ & $4.00\times10^{-2}$ & $4.76\times10^{-2}$ & $8.9\times10^{-12}$ \\
-FO & 64 & $0$ & $2.00\times10^{-2}$ & $2.39\times10^{-2}$ & $2.9\times10^{-11}$ \\
-G & 8 & $0$ & $-7.70\times10^{-3}$ & $1.21\times10^{-2}$ & $2.1\times10^{-13}$ \\
-G & 16 & $0$ & $-1.92\times10^{-3}$ & $3.05\times10^{-3}$ & $6.8\times10^{-13}$ \\
-G & 32 & $0$ & $-4.81\times10^{-4}$ & $7.65\times10^{-4}$ & $4.4\times10^{-12}$ \\
-G & 64 & $0$ & $-1.20\times10^{-4}$ & $1.92\times10^{-4}$ & $1.9\times10^{-11}$ \\
+FO & 8 & $0$ & $1.61\times10^{-1}$ & $-7.70\times10^{-3}$ & $1.86\times10^{-1}$ & $2.22\times10^{-1}$ & $1.4\times10^{-13}$ \\
+FO & 16 & $0$ & $8.01\times10^{-2}$ & $-1.92\times10^{-3}$ & $9.45\times10^{-2}$ & $1.17\times10^{-1}$ & $4.1\times10^{-13}$ \\
+FO & 32 & $0$ & $4.00\times10^{-2}$ & $-4.81\times10^{-4}$ & $4.76\times10^{-2}$ & $5.98\times10^{-2}$ & $4.5\times10^{-12}$ \\
+FO & 64 & $0$ & $2.00\times10^{-2}$ & $-1.20\times10^{-4}$ & $2.39\times10^{-2}$ & $3.03\times10^{-2}$ & $2.8\times10^{-11}$ \\
+FO & 128 & $0$ & $9.99\times10^{-3}$ & $-3.00\times10^{-5}$ & $1.20\times10^{-2}$ & $1.52\times10^{-2}$ & $2.0\times10^{-10}$ \\
+G & 8 & $0$ & $-7.70\times10^{-3}$ & $-7.70\times10^{-3}$ & $1.21\times10^{-2}$ & $1.21\times10^{-2}$ & $3.4\times10^{-13}$ \\
+G & 16 & $0$ & $-1.92\times10^{-3}$ & $-1.92\times10^{-3}$ & $3.05\times10^{-3}$ & $3.05\times10^{-3}$ & $8.0\times10^{-13}$ \\
+G & 32 & $0$ & $-4.81\times10^{-4}$ & $-4.81\times10^{-4}$ & $7.65\times10^{-4}$ & $7.65\times10^{-4}$ & $5.1\times10^{-12}$ \\
+G & 64 & $0$ & $-1.20\times10^{-4}$ & $-1.20\times10^{-4}$ & $1.92\times10^{-4}$ & $1.92\times10^{-4}$ & $2.4\times10^{-11}$ \\
+G & 128 & $0$ & $-3.00\times10^{-5}$ & $-3.00\times10^{-5}$ & $4.79\times10^{-5}$ & $4.79\times10^{-5}$ & $1.2\times10^{-10}$ \\
 \bottomrule
 \end{tabular}
-\caption{Pure-Neumann extension with all boundary vertices unknown. Compatibility uses a unit-sum left null vector; the bordered solve fixes arithmetic mean zero and applies the displayed scalar compatibility correction. This is a distinct depth experiment, not the mixed problem's matrix.}
+\caption{Pure-Neumann extension with all boundary vertices unknown. The defect uses a unit-sum left null vector $w$; ``Trapezoid defect'' is the trapezoidal quadrature of the continuous compatibility integral. ``Uniform'' adds one scalar correction to every row (bordered solve); ``row-scaled'' removes the same defect with a correction proportional to $|\mathrm{diag}\,A|$. Both fix the arithmetic mean to zero. This is a distinct depth experiment, not the mixed problem's matrix.}
 \label{tab:pure-neumann}
 \end{table}

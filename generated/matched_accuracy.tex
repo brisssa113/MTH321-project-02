@@ -6,16 +6,28 @@
 \toprule
 Boundary & Target & Closure & $N$ & $E_{\infty,h}$ & Assembly (ms) & Solve (ms) & Total (ms) \\
 \midrule
-Neumann & $1\times10^{-2}$ & FO & 128 & $6.853\times10^{-3}$ & 2.3 & 28 & 30 \\
-Neumann & $1\times10^{-2}$ & G & 8 & $3.377\times10^{-3}$ & 0.13 & 0.084 & 0.21 \\
-Neumann & $5\times10^{-3}$ & FO & 256 & $3.411\times10^{-3}$ & 9 & 1.7e+02 & 1.8e+02 \\
-Neumann & $5\times10^{-3}$ & G & 8 & $3.377\times10^{-3}$ & 0.13 & 0.084 & 0.21 \\
-Robin & $1\times10^{-2}$ & FO & 64 & $8.355\times10^{-3}$ & 0.44 & 5.5 & 5.9 \\
-Robin & $1\times10^{-2}$ & G & 4 & $7.326\times10^{-3}$ & 0.12 & 0.043 & 0.16 \\
-Robin & $5\times10^{-3}$ & FO & 128 & $4.159\times10^{-3}$ & 2.8 & 33 & 36 \\
-Robin & $5\times10^{-3}$ & G & 8 & $2.066\times10^{-3}$ & 0.15 & 0.1 & 0.25 \\
+Neumann & $5\times10^{-3}$ & FO & 256 & $3.411\times10^{-3}$ & 14 & 280 & 300 \\
+Neumann & $5\times10^{-3}$ & G & 8 & $3.377\times10^{-3}$ & 0.32 & 0.16 & 0.48 \\
+Neumann & $2\times10^{-3}$ & FO & 512 & $1.702\times10^{-3}$ & 63 & 1900 & 2000 \\
+Neumann & $2\times10^{-3}$ & G & 16 & $8.611\times10^{-4}$ & 0.47 & 0.58 & 1.1 \\
+Neumann & $1\times10^{-3}$ & FO & -- & not reached & -- & -- & -- \\
+Neumann & $1\times10^{-3}$ & G & 16 & $8.611\times10^{-4}$ & 0.47 & 0.58 & 1.1 \\
+Neumann & $1\times10^{-4}$ & FO & -- & not reached & -- & -- & -- \\
+Neumann & $1\times10^{-4}$ & G & 64 & $5.412\times10^{-5}$ & 0.89 & 8.3 & 9.2 \\
+Neumann & $1\times10^{-5}$ & FO & -- & not reached & -- & -- & -- \\
+Neumann & $1\times10^{-5}$ & G & 256 & $3.385\times10^{-6}$ & 19 & 300 & 320 \\
+Robin & $5\times10^{-3}$ & FO & 128 & $4.159\times10^{-3}$ & 4.4 & 54 & 58 \\
+Robin & $5\times10^{-3}$ & G & 8 & $2.066\times10^{-3}$ & 0.39 & 0.19 & 0.59 \\
+Robin & $2\times10^{-3}$ & FO & 512 & $1.036\times10^{-3}$ & 70 & 1900 & 2000 \\
+Robin & $2\times10^{-3}$ & G & 16 & $5.307\times10^{-4}$ & 0.49 & 0.61 & 1.1 \\
+Robin & $1\times10^{-3}$ & FO & -- & not reached & -- & -- & -- \\
+Robin & $1\times10^{-3}$ & G & 16 & $5.307\times10^{-4}$ & 0.49 & 0.61 & 1.1 \\
+Robin & $1\times10^{-4}$ & FO & -- & not reached & -- & -- & -- \\
+Robin & $1\times10^{-4}$ & G & 64 & $3.335\times10^{-5}$ & 1.1 & 9.9 & 11 \\
+Robin & $1\times10^{-5}$ & FO & -- & not reached & -- & -- & -- \\
+Robin & $1\times10^{-5}$ & G & 128 & $8.340\times10^{-6}$ & 3.8 & 53 & 57 \\
 \bottomrule
 \end{tabular}
-\caption{Coarsest successful grid in $\{4,8,16,32,64,128,256,512\}$. Separate assembly, solve, and complete-total medians are shown; their medians need not sum. Five samples follow a warm-up. Small-grid timings are noise sensitive.}
+\caption{Coarsest successful grid in $\{4,8,16,32,64,128,256,512\}$. Separate assembly, solve, and complete-total medians are shown; their medians need not sum. Each median follows one warm-up run and uses 25 samples for $N\le32$ and 5 samples otherwise. Small-grid timings are noise sensitive.}
 \label{tab:matched-accuracy}
 \end{table}

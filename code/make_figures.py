@@ -21,7 +21,7 @@ def make_depth_plots(fem_rows: list[dict], pure_rows: list[dict], output_dir: Pa
                       [r["fdm_fem_linf_difference"] for r in group], marker,
                       label=f"{boundary.title()} / {closure}")
     ax.invert_xaxis(); ax.set_xlabel("h"); ax.set_ylabel("shared-node FDM–FEM max difference")
-    ax.set_xticks([1/16, 1/32, 1/64, 1/128], ["1/16", "1/32", "1/64", "1/128"])
+    ax.set_xticks([1/16, 1/32, 1/64, 1/128, 1/256, 1/512], ["1/16", "1/32", "1/64", "1/128", "1/256", "1/512"])
     ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
     ax.grid(True, which="both", alpha=.3); ax.legend(fontsize=9)
     fig.tight_layout(); fig.savefig(output_dir / "fem_oracle.png", dpi=200); plt.close(fig)
@@ -33,10 +33,12 @@ def make_depth_plots(fem_rows: list[dict], pure_rows: list[dict], output_dir: Pa
         axes[0].loglog(h, [abs(r["discrete_compatibility_defect"]) for r in group],
                        marker, label=closure)
         axes[1].loglog(h, [r["gauge_solution_linf_error"] for r in group],
-                       marker, label=closure)
+                       marker, label=f"{closure}, uniform correction")
+        axes[1].loglog(h, [r["scaled_correction_solution_linf_error"] for r in group],
+                       marker[0] + ":", label=f"{closure}, row-scaled correction")
     for ax, title in zip(axes, ("Compatibility defect", "Mean-zero solution error")):
         ax.invert_xaxis(); ax.set_xlabel("h"); ax.set_title(title)
-        ax.set_xticks([1/8, 1/16, 1/32, 1/64], ["1/8", "1/16", "1/32", "1/64"])
+        ax.set_xticks([1/8, 1/16, 1/32, 1/64, 1/128], ["1/8", "1/16", "1/32", "1/64", "1/128"])
         ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
         ax.grid(True, which="both", alpha=.3); ax.legend(fontsize=9)
     fig.tight_layout(); fig.savefig(output_dir / "pure_neumann_depth.png", dpi=200); plt.close(fig)
@@ -81,7 +83,7 @@ def make_plots(rows: list[dict], output_dir: Path, fitted: list[dict]) -> None:
         subset = [r for r in rows if (r["boundary"], r["closure"]) == key]
         ax.loglog([r["linf"] for r in subset], [r["total_seconds_median"] for r in subset], style, label=f"{key[0].title()} / {key[1]}")
     ax.set_xlabel("global nodal max error"); ax.set_ylabel("median of assembly + solve time (s)")
-    ax.set_title("Cost versus accuracy (5 repetitions; warm-up excluded)"); ax.grid(True, which="both", alpha=.3); ax.legend(fontsize=11)
+    ax.set_title("Cost versus accuracy (median of repeated runs; warm-up excluded)"); ax.grid(True, which="both", alpha=.3); ax.legend(fontsize=11)
     fig.tight_layout(); fig.savefig(output_dir / "cost_vs_accuracy.png", dpi=200); plt.close(fig)
 
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
@@ -138,7 +140,7 @@ def make_weighted_energy_plots(
             [r["h"] for r in subset], [r["energy_error"] for r in subset],
             style, label=f"{key[0].title()} / {key[1]}, p={subset[-1]['fitted_energy_order_finest_three']:.3f}",
         )
-    ref_h = np.array([1/16, 1/32, 1/64, 1/128])
+    ref_h = np.array(sorted({r["h"] for r in energy_rows}, reverse=True))
     for closure, order in (("first", 1), ("ghost", 2)):
         anchor = next(r["energy_error"] for r in energy_rows if r["boundary"] == "neumann" and r["closure"] == closure and r["N"] == 64)
         ax.loglog(ref_h, 1.6 * anchor * (ref_h / (1/64))**order,
@@ -165,5 +167,3 @@ def make_weighted_energy_plots(
     fig.tight_layout()
     fig.savefig(output_dir / "cg_solver_comparison.png", dpi=200)
     plt.close(fig)
-
-

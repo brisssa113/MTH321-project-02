@@ -2,28 +2,24 @@
 \centering
 \scriptsize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{llrrrr}
+\begin{tabular}{lrrrrrrr}
 \toprule
-Boundary & Closure & $N$ & FEM error & FDM error & FDM--FEM difference \\
+Boundary & $N$ & FEM error & $p_{\rm FEM}$ & FO--FEM & $p$ & G--FEM & $p$ \\
 \midrule
-Neumann & FO & 16 & $2.29\times10^{-3}$ & $5.83\times10^{-2}$ & $5.60\times10^{-2}$ \\
-Neumann & G & 16 & $2.29\times10^{-3}$ & $8.61\times10^{-4}$ & $3.15\times10^{-3}$ \\
-Neumann & FO & 32 & $5.74\times10^{-4}$ & $2.81\times10^{-2}$ & $2.76\times10^{-2}$ \\
-Neumann & G & 32 & $5.74\times10^{-4}$ & $2.16\times10^{-4}$ & $7.90\times10^{-4}$ \\
-Neumann & FO & 64 & $1.44\times10^{-4}$ & $1.38\times10^{-2}$ & $1.37\times10^{-2}$ \\
-Neumann & G & 64 & $1.44\times10^{-4}$ & $5.41\times10^{-5}$ & $1.98\times10^{-4}$ \\
-Neumann & FO & 128 & $3.59\times10^{-5}$ & $6.85\times10^{-3}$ & $6.82\times10^{-3}$ \\
-Neumann & G & 128 & $3.59\times10^{-5}$ & $1.35\times10^{-5}$ & $4.94\times10^{-5}$ \\
-Robin & FO & 16 & $7.21\times10^{-4}$ & $3.43\times10^{-2}$ & $3.36\times10^{-2}$ \\
-Robin & G & 16 & $7.21\times10^{-4}$ & $5.31\times10^{-4}$ & $1.25\times10^{-3}$ \\
-Robin & FO & 32 & $1.81\times10^{-4}$ & $1.69\times10^{-2}$ & $1.67\times10^{-2}$ \\
-Robin & G & 32 & $1.81\times10^{-4}$ & $1.33\times10^{-4}$ & $3.14\times10^{-4}$ \\
-Robin & FO & 64 & $4.53\times10^{-5}$ & $8.36\times10^{-3}$ & $8.31\times10^{-3}$ \\
-Robin & G & 64 & $4.53\times10^{-5}$ & $3.34\times10^{-5}$ & $7.86\times10^{-5}$ \\
-Robin & FO & 128 & $1.13\times10^{-5}$ & $4.16\times10^{-3}$ & $4.15\times10^{-3}$ \\
-Robin & G & 128 & $1.13\times10^{-5}$ & $8.34\times10^{-6}$ & $1.97\times10^{-5}$ \\
+Neumann & 16 & $2.29\times10^{-3}$ & -- & $5.60\times10^{-2}$ & -- & $3.15\times10^{-3}$ & -- \\
+Neumann & 32 & $5.74\times10^{-4}$ & 1.995 & $2.76\times10^{-2}$ & 1.023 & $7.90\times10^{-4}$ & 1.994 \\
+Neumann & 64 & $1.44\times10^{-4}$ & 1.999 & $1.37\times10^{-2}$ & 1.011 & $1.98\times10^{-4}$ & 1.999 \\
+Neumann & 128 & $3.59\times10^{-5}$ & 2.000 & $6.82\times10^{-3}$ & 1.006 & $4.94\times10^{-5}$ & 2.000 \\
+Neumann & 256 & $8.98\times10^{-6}$ & 2.000 & $3.40\times10^{-3}$ & 1.003 & $1.24\times10^{-5}$ & 2.000 \\
+Neumann & 512 & $2.24\times10^{-6}$ & 2.000 & $1.70\times10^{-3}$ & 1.001 & $3.09\times10^{-6}$ & 2.000 \\
+Robin & 16 & $7.21\times10^{-4}$ & -- & $3.36\times10^{-2}$ & -- & $1.25\times10^{-3}$ & -- \\
+Robin & 32 & $1.81\times10^{-4}$ & 1.992 & $1.67\times10^{-2}$ & 1.010 & $3.14\times10^{-4}$ & 1.993 \\
+Robin & 64 & $4.53\times10^{-5}$ & 1.999 & $8.31\times10^{-3}$ & 1.004 & $7.86\times10^{-5}$ & 1.999 \\
+Robin & 128 & $1.13\times10^{-5}$ & 2.000 & $4.15\times10^{-3}$ & 1.003 & $1.97\times10^{-5}$ & 2.000 \\
+Robin & 256 & $2.83\times10^{-6}$ & 2.000 & $2.07\times10^{-3}$ & 1.001 & $4.92\times10^{-6}$ & 2.000 \\
+Robin & 512 & $7.08\times10^{-7}$ & 2.000 & $1.04\times10^{-3}$ & 1.001 & $1.23\times10^{-6}$ & 2.000 \\
 \bottomrule
 \end{tabular}
-\caption{Independent P1 triangular FEM solution of the weak form in Section~\ref{sec:formulation}, compared at common grid vertices. Errors are nodal maxima against the manufactured exact solution; the difference is not itself an error bound.}
+\caption{Independent P1 triangular FEM solution of the weak form in Section~\ref{sec:formulation}, compared with both FDM closures at common grid vertices. FEM error: nodal maximum against the manufactured solution; FO--FEM and G--FEM: nodal maximum difference between the FDM and FEM solutions. Orders $p$ are pairwise between adjacent grids; the differences are not error bounds.}
 \label{tab:fem-oracle}
 \end{table}
