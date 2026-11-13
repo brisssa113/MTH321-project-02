@@ -4,7 +4,7 @@
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{llrrrrrl}
 \toprule
-Boundary & Closure & rtol & Iterations & $\rho_{\rm alg}$ & $\|r\|_\infty/\|b\|_\infty$ & Required & Rule met \\
+Boundary & Closure & rtol & Iterations & $\rho_{\rm alg}$ & $\|r\|_\infty/\|b\|_\infty$ & Est. threshold & Rule met \\
 \midrule
 Neumann & FO & $1\times10^{-8}$ & 452 & $3.14\times10^{-4}$ & $2.67\times10^{-9}$ & $9.46\times10^{-9}$ & yes \\
 Neumann & FO & $1\times10^{-10}$ & 588 & $1.99\times10^{-6}$ & $4.04\times10^{-11}$ & $9.46\times10^{-9}$ & yes \\
@@ -14,12 +14,12 @@ Neumann & G & $1\times10^{-10}$ & 582 & $5.47\times10^{-4}$ & $3.25\times10^{-11
 Neumann & G & $1\times10^{-12}$ & 712 & $5.00\times10^{-6}$ & $2.89\times10^{-13}$ & $1.52\times10^{-10}$ & yes \\
 Robin & FO & $1\times10^{-8}$ & 392 & $2.46\times10^{-4}$ & $2.72\times10^{-9}$ & $9.68\times10^{-9}$ & yes \\
 Robin & FO & $1\times10^{-10}$ & 518 & $2.90\times10^{-6}$ & $3.83\times10^{-11}$ & $9.68\times10^{-9}$ & yes \\
-Robin & FO & $1\times10^{-12}$ & 679 & $6.13\times10^{-9}$ & $6.90\times10^{-14}$ & $9.68\times10^{-9}$ & yes \\
+Robin & FO & $1\times10^{-12}$ & 679 & $6.17\times10^{-9}$ & $6.90\times10^{-14}$ & $9.68\times10^{-9}$ & yes \\
 Robin & G & $1\times10^{-8}$ & 393 & $6.14\times10^{-2}$ & $2.47\times10^{-9}$ & $1.10\times10^{-10}$ & no \\
 Robin & G & $1\times10^{-10}$ & 519 & $7.47\times10^{-4}$ & $2.99\times10^{-11}$ & $1.10\times10^{-10}$ & yes \\
 Robin & G & $1\times10^{-12}$ & 647 & $9.42\times10^{-6}$ & $2.30\times10^{-13}$ & $1.10\times10^{-10}$ & yes \\
 \bottomrule
 \end{tabular}
-\caption{Jacobi-preconditioned GMRES on the original matrix at $N=64$, without ILU factorisation. ``Required'' is $10^{-2}E_{\infty,h}/(\|A^{-1}\|_\infty\|b\|_\infty)$, the relative residual that guarantees $\rho_{\rm alg}<10^{-2}$; the rule is sufficient, not necessary.}
+\caption{Jacobi-preconditioned GMRES on the original matrix at $N=64$, without ILU factorisation. The displayed ``Required'' column is an estimated diagnostic threshold $10^{-2}E_{\infty,h}/(\widehat{\|A^{-1}\|_\infty}\|b\|_\infty)$ based on \texttt{onenormest}; it is not a certified sufficient bound on algebraic error.}
 \label{tab:weak-gmres}
 \end{table}

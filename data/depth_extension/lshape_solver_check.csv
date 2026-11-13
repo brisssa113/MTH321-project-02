@@ -1,0 +1,2 @@
+level,dof_free,cg_info,nodal_difference_inf,direct_residual_inf,cg_residual_inf
+5,2945,0,7.205347429817266e-14,2.220446049250313e-15,6.272760089132134e-14

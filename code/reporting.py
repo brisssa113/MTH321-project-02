@@ -121,15 +121,15 @@ def write_report_material(rows, fitted, weighted, energy, cg_rows, algebraic,
           "tab:cg-summary", "footnotesize")
     if weak_gmres:
         table(destination / "weak_gmres_summary.tex", "llrrrrrl",
-              r"Boundary & Closure & rtol & Iterations & $\rho_{\rm alg}$ & $\|r\|_\infty/\|b\|_\infty$ & Required & Rule met",
+              r"Boundary & Closure & rtol & Iterations & $\rho_{\rm alg}$ & $\|r\|_\infty/\|b\|_\infty$ & Est. threshold & Rule met",
               [[r["boundary"].title(), labels[r["closure"]], sci(r["rtol"], 0),
                 r["iterations"], sci(r["algebraic_to_discretisation_ratio"], 2),
                 sci(r["relative_residual_inf"], 2), sci(r["required_relative_residual"], 2),
                 "yes" if r["residual_rule_satisfied"] in (True, "True", 1) else "no"]
                for r in weak_gmres],
               r"Jacobi-preconditioned GMRES on the original matrix at $N=64$, without ILU factorisation. "
-              r"``Required'' is $10^{-2}E_{\infty,h}/(\|A^{-1}\|_\infty\|b\|_\infty)$, the relative residual that guarantees $\rho_{\rm alg}<10^{-2}$; "
-              r"the rule is sufficient, not necessary.",
+              r"``Estimated threshold'' is $10^{-2}E_{\infty,h}/(\widehat{\|A^{-1}\|_\infty}\|b\|_\infty)$, based on the inverse-norm estimate from \texttt{onenormest}. "
+              r"It is a diagnostic threshold, not a certified sufficient bound on the algebraic error.",
               "tab:weak-gmres", "scriptsize")
     if fem_rows:
         def pick(boundary, closure, N):
