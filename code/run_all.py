@@ -72,7 +72,20 @@ def convert_csv_to_latex(csv_path: Path, output_path: Path) -> None:
     output_path.write_text("\n".join(lines), encoding="utf-8")
 
 
+def preflight() -> None:
+    """Fail before expensive calculations if a report source is missing."""
+    required = ("report/lshape_theory.tex", "report/variable_diffusion_theory.tex")
+    missing = [name for name in required if not (ROOT / name).is_file()]
+    if missing:
+        raise FileNotFoundError("Missing required report sources: " + ", ".join(missing))
+    for name in required:
+        if not (ROOT / name).read_text(encoding="utf-8").strip():
+            raise ValueError("Empty required report source: " + name)
+    print("Preflight passed: required theory sources present.", flush=True)
+
+
 def main() -> None:
+    preflight()
     for directory in (DATA, FIGURES, GENERATED):
         directory.mkdir(parents=True, exist_ok=True)
 
@@ -89,6 +102,9 @@ def main() -> None:
     # lives in data/depth_extension and cannot overwrite the FO/G run record.
     run_depth_comparisons(ROOT)
     run_variable_diffusion(ROOT)
+    # The Overleaf root and standalone report fragments must be identical.
+    for name in ("depth_extension.tex", "variable_diffusion.tex"):
+        (ROOT / name).write_bytes((ROOT / "report" / name).read_bytes())
 
     raw_tables = GENERATED / "raw_tables"
     raw_tables.mkdir(exist_ok=True)
@@ -103,4 +119,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    preflight() if "--check-inputs" in sys.argv else main()

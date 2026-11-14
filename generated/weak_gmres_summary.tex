@@ -20,6 +20,6 @@ Robin & G & $1\times10^{-10}$ & 519 & $7.47\times10^{-4}$ & $2.99\times10^{-11}$
 Robin & G & $1\times10^{-12}$ & 647 & $9.42\times10^{-6}$ & $2.30\times10^{-13}$ & $1.10\times10^{-10}$ & yes \\
 \bottomrule
 \end{tabular}
-\caption{Jacobi-preconditioned GMRES on the original matrix at $N=64$, without ILU factorisation. The displayed ``Required'' column is an estimated diagnostic threshold $10^{-2}E_{\infty,h}/(\widehat{\|A^{-1}\|_\infty}\|b\|_\infty)$ based on \texttt{onenormest}; it is not a certified sufficient bound on algebraic error.}
+\caption{Jacobi-preconditioned GMRES on the original matrix at $N=64$, without ILU factorisation. ``Est. threshold'' is $10^{-2}E_{\infty,h}/(\widehat{\|A^{-1}\|_\infty}\|b\|_\infty)$, based on the inverse-norm estimate from \texttt{onenormest}. It is a diagnostic threshold, not a certified sufficient bound on the algebraic error.}
 \label{tab:weak-gmres}
 \end{table}

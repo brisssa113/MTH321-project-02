@@ -3,10 +3,47 @@ import unittest
 import numpy as np
 from scipy.sparse.linalg import spsolve
 
-from code.variable_diffusion import assemble_fdm, assemble_fem, exact
+from code.variable_diffusion import (assemble_fdm, assemble_fem, exact,
+    forcing, reconstructed_interface_fluxes, symmetry_defect)
 
 
 class VariableDiffusionTests(unittest.TestCase):
+    def test_prescribed_sine_forcing_by_independent_flux_derivative(self):
+        # Differentiate independently specified a*grad(u), without using forcing.
+        x=np.array([.13,.27,.51,.86]); y=np.array([.21,.44,.66,.79])
+        eps=1e-25
+        def qx(x,y): return (1+x)*np.pi*np.cos(np.pi*x)*np.sin(np.pi*y)
+        def qy(x,y): return (1+x)*np.pi*np.sin(np.pi*x)*np.cos(np.pi*y)
+        independent=-(qx(x+1j*eps,y).imag+qy(x,y+1j*eps).imag)/eps
+        np.testing.assert_allclose(forcing(x,y,"smooth_sine"),independent,rtol=2e-14)
+        np.testing.assert_allclose(exact(np.zeros_like(y),y,"smooth_sine"),0,atol=1e-15)
+
+    def test_prescribed_sine_convergence_and_spd(self):
+        for method in ("fdm","fem"):
+            errors=[]
+            for n in (8,16):
+                if method=="fdm":
+                    a,b=assemble_fdm(n,"smooth_sine")
+                    x,y=np.meshgrid(np.arange(1,n)/n,np.arange(1,n)/n)
+                    target=(np.sin(np.pi*x)*np.sin(np.pi*y)).ravel()
+                else:
+                    mesh,_,a,b,_,free=assemble_fem(n,"smooth_sine")
+                    target=(np.sin(np.pi*mesh.p[0])*np.sin(np.pi*mesh.p[1]))[free]
+                self.assertLess(symmetry_defect(a),1e-14)
+                if n==8: self.assertGreater(np.linalg.eigvalsh(a.toarray())[0],0)
+                errors.append(np.max(np.abs(spsolve(a.tocsc(),b)-target)))
+            self.assertGreater(errors[0]/errors[1],3.5)
+            self.assertLess(errors[0]/errors[1],4.5)
+
+    def test_material_side_trace_reconstruction_has_common_orientation(self):
+        n=15; x,y=np.meshgrid(np.arange(1,n)/n,np.arange(1,n)/n)
+        # Deliberately unequal side slopes; independent expected flux jump=4.
+        field=np.where(x<.5,2*x,1+3*(x-.5)) + .2*y
+        left,right=reconstructed_interface_fluxes(field,n,contrast=2)
+        np.testing.assert_allclose(left,-2,atol=1e-13)
+        np.testing.assert_allclose(right,-6,atol=1e-13)
+        self.assertAlmostEqual(float(np.max(np.abs(right-left))),4)
+
     def test_shared_face_flux_and_material_interface(self):
         n = 15
         a, b = assemble_fdm(n, "layered", "harmonic")

@@ -128,7 +128,7 @@ def write_report_material(rows, fitted, weighted, energy, cg_rows, algebraic,
                 "yes" if r["residual_rule_satisfied"] in (True, "True", 1) else "no"]
                for r in weak_gmres],
               r"Jacobi-preconditioned GMRES on the original matrix at $N=64$, without ILU factorisation. "
-              r"``Estimated threshold'' is $10^{-2}E_{\infty,h}/(\widehat{\|A^{-1}\|_\infty}\|b\|_\infty)$, based on the inverse-norm estimate from \texttt{onenormest}. "
+              r"``Est. threshold'' is $10^{-2}E_{\infty,h}/(\widehat{\|A^{-1}\|_\infty}\|b\|_\infty)$, based on the inverse-norm estimate from \texttt{onenormest}. "
               r"It is a diagnostic threshold, not a certified sufficient bound on the algebraic error.",
               "tab:weak-gmres", "scriptsize")
     if fem_rows:
