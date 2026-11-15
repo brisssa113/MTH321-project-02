@@ -1,0 +1,21 @@
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrr}
+\toprule
+Method & $N$ & nodal $L^\infty$ error & order & CG steps \\
+\midrule
+FDM & 8 & $9.05\times10^{-4}$ & -- & 29 \\
+FEM & 8 & $2.35\times10^{-3}$ & -- & 29 \\
+FDM & 16 & $2.31\times10^{-4}$ & 1.97 & 61 \\
+FEM & 16 & $6.00\times10^{-4}$ & 1.97 & 61 \\
+FDM & 32 & $5.82\times10^{-5}$ & 1.99 & 119 \\
+FEM & 32 & $1.51\times10^{-4}$ & 1.99 & 119 \\
+FDM & 64 & $1.46\times10^{-5}$ & 2.00 & 238 \\
+FEM & 64 & $3.77\times10^{-5}$ & 2.00 & 238 \\
+\bottomrule
+\end{tabular}
+\caption{Additional exponential test with $a=1+x$. Full residuals, timings, nonzeros and condition estimates are in \path{data/variable_diffusion/smooth.csv}.}
+\label{tab:variable-smooth}
+\end{table}

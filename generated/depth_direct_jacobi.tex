@@ -1,0 +1,19 @@
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{rrrrrrr}
+\toprule
+$N$ & free DOF & $E_{\rm disc,\infty}$ & Jacobi steps & final $\|r\|_\infty$ & $\|u_J-u_D\|_\infty/E_{\rm disc,\infty}$ & direct/Jacobi solve (ms) \\
+\midrule
+8 & 49 & $5.44\times10^{-4}$ & 220 & $2.50\times10^{-6}$ & $2.25\times10^{-4}$ & 0.20/2.06 \\
+16 & 225 & $1.40\times10^{-4}$ & 940 & $1.10\times10^{-6}$ & $3.94\times10^{-4}$ & 0.47/14.08 \\
+32 & 961 & $3.51\times10^{-5}$ & 4070 & $2.68\times10^{-7}$ & $3.86\times10^{-4}$ & 4.98/72.12 \\
+64 & 3969 & $8.79\times10^{-6}$ & 17410 & $7.03\times10^{-8}$ & $4.05\times10^{-4}$ & 10.92/727.46 \\
+\bottomrule
+\end{tabular}
+}
+\caption{Matched-accuracy sparse direct and Jacobi comparison. Full residuals and errors are in \path{data/depth_extension/direct_jacobi.csv}. Times are single local measurements.}
+\label{tab:depth-direct-jacobi}
+\end{table}

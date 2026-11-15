@@ -262,6 +262,7 @@ def run_required_direction3(root: Path):
 
 
 def run(root: Path):
+    """Compute all Section 9 data and figures without report-authoring inputs."""
     out = root/"data"/"variable_diffusion"
     out.mkdir(parents=True, exist_ok=True)
     smooth = []
@@ -336,61 +337,5 @@ def run(root: Path):
                                 condition_2=(float(eigsh(a,k=1,which="LM",return_eigenvectors=False)[0]/
                                                    eigsh(a,k=1,which="SM",return_eigenvectors=False)[0]) if n<=31 else "")))
     write_csv(out/"layered.csv",layered)
-    sine, interface, contrasts = run_required_direction3(root)
-    text = [r"\section{Variable diffusion benchmark}",
-            r"\label{sec:variable-diffusion}",
-            r"This is a separate all-Dirichlet benchmark for $-\nabla\cdot(a\nabla u)=f$ on $(0,1)^2$; it does not change the mixed-boundary model. The prescribed smooth case uses $a=1+x$, $u_*=\sin(\pi x)\sin(\pi y)$, $g=0$ and $f=2\pi^2(1+x)\sin(\pi x)\sin(\pi y)-\pi\cos(\pi x)\sin(\pi y)$. The FDM uses one shared positive coefficient per face in a conservative five-point flux balance. The P1 FEM assembles $\int a\nabla u_h\cdot\nabla v_h$ on the same square grid split into triangles. Both use exact Dirichlet data. The exponential example below is an additional check, not a substitute for this prescribed case.",
-            r"\begin{table}[htbp]\centering\small\begin{tabular}{llrrrr}\toprule Method & $N$ & $L^2$ error & $L^2$ order & nodal $L^\infty$ & $L^\infty$ order\\\midrule"]
-    for r in sine:
-        ol2 = "--" if r["order_l2"] == "" else f'{r["order_l2"]:.2f}'
-        oi = "--" if r["order_inf"] == "" else f'{r["order_inf"]:.2f}'
-        text.append(f'{r["method"]} & {r["N"]} & {r["error_l2"]:.3g} & {ol2} & {r["error_inf"]:.3g} & {oi} \\\\')
-    text += [r"\bottomrule\end{tabular}\caption{Prescribed sine benchmark on four matched meshes. The FDM $L^2$ value is the composite trapezoid norm of nodal errors with zero boundary error; the FEM $L^2$ value integrates the continuous P1 error. These are explicitly different reconstruction conventions. Free degrees of freedom, nonzeros and residuals are retained in \texttt{data/variable\_diffusion/sine\_required.csv}.}\end{table}",
-             r"The reduced matrix symmetry defect is recorded for every sine case. Positive definiteness follows from the separate energy arguments in Section~\ref{sec:variable-theory}.",
-             r"\paragraph{Additional exponential check.} For $a=1+x$, $u_*=e^{x+y}$ and $f=-(3+2x)e^{x+y}$, the following independent refinement provides a nonzero-Dirichlet test.",
-            r"\begin{table}[htbp]\centering\small\begin{tabular}{llrrr}\toprule Method & $N$ & nodal $L^\infty$ error & order & CG steps\\\midrule"]
-    for r in smooth:
-        order = "--" if r["order"] == "" else f'{r["order"]:.2f}'
-        text.append(f'{r["method"]} & {r["N"]} & {r["error_inf"]:.3g} & {order} & {r["cg_iterations"]} \\\\')
-    text += [r"\bottomrule\end{tabular}\caption{Variable smooth coefficient, matched mesh and nodal error. Full residuals, timings, nonzeros and condition estimates are in \texttt{data/variable\_diffusion/smooth.csv}.}\end{table}",
-             r"For a separate layered material, $a=1$ for $x<1/2$ and $a=10$ for $x>1/2$. The exact one-dimensional solution is $u_*(x)=[\min(x,1/2)+\max(x-1/2,0)/10]/0.55$, with positive gradient-weighted flux $a u_x=1/0.55$ and Fourier flux $J_x=-a u_x=-1/0.55$. Odd $N$ places the interface on a vertical face. Harmonic and arithmetic face means are compared on exactly the same grids; no FEM claim is made for this discontinuous case. The retained legacy column below is the absolute error in positive $a u_x$ at one sampled interface face; its sign convention does not affect the absolute error, but it does not represent the maximum over all interface faces.",
-             r"\begin{table}[htbp]\centering\small\begin{tabular}{llrr}\toprule $N$ & face mean & maximum error & interface flux error\\\midrule"]
-    for r in layered:
-        text.append(f'{r["N"]} & {r["mean"]} & {r["error_inf"]:.3g} & {r["flux_error"]:.3g} \\\\')
-    text += [r"\bottomrule\end{tabular}\caption{Layered interface benchmark; the interface-flux-error column is a single sampled face, not a whole-interface maximum. Complete values are in \texttt{data/variable\_diffusion/layered.csv}.}\end{table}",
-             r"\begin{table}[htbp]\centering\small\begin{tabular}{llrrr}\toprule $N$ & mean & $E_{J,\infty}$ & $D_h$ & $\mathcal J_h$\\\midrule"]
-    for r in interface:
-        text.append(f'{r["N"]} & {r["mean"]} & {r["interface_flux_error_max"]:.3g} & {r["adjacent_flux_jump_max"]:.3g} & {r["reconstructed_flux_jump_max"]:.3g} \\\\')
-    text += [r"\bottomrule\end{tabular}\caption{Three distinct Fourier-flux diagnostics: whole-interface error $E_{J,\infty}$, adjacent-face difference $D_h$, and material-side reconstructed trace jump $\mathcal J_h$. All use the common $+x$ orientation and the definitions below. Full precision and the maximum-error location are in \path{data/variable_diffusion/interface_diagnostics.csv}; all traces are in \path{data/variable_diffusion/interface_flux_profiles.csv}.}\end{table}",
-             r"\begin{figure}[htbp]\centering\includegraphics[width=.70\linewidth]{figures/layered_solution_cut.png}\caption{Horizontal solution cut near $y=1/2$ on the $N=63$ grid. The vertical line marks the material interface; the exact piecewise-linear solution and both face-mean schemes are shown on identical nodes.}\end{figure}",
-             r"\begin{figure}[htbp]\centering\includegraphics[width=.70\linewidth]{figures/layered_interface_flux.png}\caption{Fourier flux $J_x=-a u_x$ along every interior face crossing $x=1/2$. The harmonic reconstruction preserves the exact constant flux to round-off for this aligned one-dimensional benchmark; the arithmetic reconstruction has a position-dependent discrepancy.}\end{figure}",
-             r"\begin{table}[htbp]\centering\small\begin{tabular}{lrrr}\toprule $a_R/a_L$ & mean & Jacobi-CG steps & Direct nodal error\\\midrule"]
-    for r in contrasts:
-        if r["N"]==63:
-            text.append(f'{r["contrast"]:g} & {r["mean"]} & {r["cg_iterations"]} & {r["nodal_error_inf"]:.3g} \\\\')
-    text += [r"\bottomrule\end{tabular}\caption{Material-contrast sweep at fixed $N=63$, where the nodal errors and solution extrema are from the sparse direct solve. CG contributes the iteration count; its nodal error, residual and difference from the direct solution are separately retained in the CSV. Jacobi-preconditioned CG uses relative tolerance $10^{-10}$ and zero absolute tolerance. All $N=7,15,31,63$ values, solver differences, residuals, solution extrema and whole-interface flux errors are in \texttt{data/variable\_diffusion/contrast\_sweep.csv}.}\end{table}",
-             r"\begin{figure}[htbp]\centering\includegraphics[width=.70\linewidth]{figures/layered_contrast_iterations.png}\caption{Iteration count under a fixed stopping rule as material contrast changes. This is a measured solver diagnostic, not an asymptotic condition-number estimate.}\end{figure}",
-             r"For all tested contrasts and both face means, direct-solve extrema including boundary nodes lie in $[0,1]$. Positive definiteness and a small reconstructed jump alone do not guarantee correct flux magnitude. The harmonic exactness statement is proved under its precise assumptions in Proposition~\ref{prop:harmonic-exact}; floating-point results retain algebraic error.",
-             r"All assembled interior matrices have nonpositive off-diagonal entries and a positive Dirichlet boundary contribution, giving the discrete maximum-principle sign structure. The CSV records this check, the componentwise scaled residual, CG iteration count and direct--CG difference for each case. Estimated spectral condition numbers are reported through $N=32$ for smooth data and $N=31$ for layered data. They are properties of these specific unpreconditioned matrices and coefficient contrast; no extrapolated complexity claim is made."]
-
-    text += [r"\FloatBarrier",
-             r"\subsection{Definitions of interface diagnostics}",
-             r"Let $m=(N-1)/2$, $h=1/N$ and $U_{i,j}=U(ih,jh)$. For each interior $j=1,\ldots,N-1$, define the crossing flux $J_{f,j}=-a_f(U_{m+1,j}-U_{m,j})/h$. The maximum error is $E_{J,\infty}=\max_j|J_{f,j}-J_*|$.",
-             r"The left and right material-side reconstructions use the nearest two nodes wholly in each material, with constant extrapolation of their slope to the same interface $x=1/2$:",
-             r"\[J_h^-(1/2,y_j)=-a_L\frac{U_{m,j}-U_{m-1,j}}h,\qquad J_h^+(1/2,y_j)=-a_R\frac{U_{m+2,j}-U_{m+1,j}}h.\]",
-             r"Both are components in the common $+x$ direction, not opposing outward normals. Thus $\mathcal J_h=\max_j|J_h^+-J_h^-|$. The retained adjacent-face diagnostic is instead $D_h=\max_j\max(|J_{f,j}-J_h^-|,|J_{f,j}-J_h^+|)$. These definitions also specify the reconstruction for nonconstant computed fields. A small $\mathcal J_h$ measures agreement of the two reconstructed traces; either trace can still have an incorrect magnitude."]
-    last = next(r for r in interface if r["N"] == 63 and r["mean"] == "arithmetic")
-    text.append(f'For arithmetic averaging at $N=63$, $D_h={last["adjacent_flux_jump_max"]:.4g}$, $E_{{J,\\infty}}={last["interface_flux_error_max"]:.4g}$ and $\\mathcal J_h={last["reconstructed_flux_jump_max"]:.3g}$. The largest crossing-flux discrepancy occurs at $y={last["max_flux_error_y"]:.5g}$, near an interface endpoint. The four-grid observations do not establish a limiting constant.')
-    with (out/"sine_fitted_orders.csv").open(newline="",encoding="utf8") as f:
-        fits=list(csv.DictReader(f))
-    text += [r"\FloatBarrier\subsection{Fitted sine orders and symmetry checks}",
-             r"We fit $\log E=p\log h+c$ by ordinary least squares on the finest three existing grids $N=16,32,64$ ($h\in[1/64,1/16]$). Adjacent-grid orders in the earlier table and these fitted orders are distinct quantities. FDM uses the discrete nodal $L^2$ norm; FEM uses the continuous P1 error norm, so their absolute $L^2$ errors are not used to rank the methods.",
-             r"\begin{table}[htbp]\centering\begin{tabular}{lrrr}\toprule Method & fitted $p_{L^2}$ & fitted $p_\infty$ & max $\delta_A$\\\midrule"]
-    for r in fits:
-        delta=max(v["symmetry_defect_fro"] for v in sine if v["method"]==r["method"])
-        text.append(f'{r["method"]} & {float(r["fitted_order_l2"]):.4f} & {float(r["fitted_order_inf"]):.4f} & {delta:.3g} \\\\')
-    text += [r"\bottomrule\end{tabular}\caption{Fitted sine orders on $N=16,32,64$ and maximum relative Frobenius symmetry defect over all four sine grids. Here $\delta_A=\|A-A^T\|_F/\|A\|_F$ for the reduced matrix after Dirichlet elimination. Fits and $R^2$ values are saved in \path{data/variable_diffusion/sine_fitted_orders.csv}; symmetry checks are in \path{data/variable_diffusion/sine_required.csv}.}\end{table}"]
-    text.append((root/"report"/"variable_diffusion_theory.tex").read_text(encoding="utf-8"))
-
-    (root/"report"/"variable_diffusion.tex").write_text("\n".join(text)+"\n",encoding="utf-8")
-    return smooth,layered
+    run_required_direction3(root)
+    return smooth, layered

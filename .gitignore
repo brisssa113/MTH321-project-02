@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+.vscode/
+.mth321-run-*/
+tmp/
+.DS_Store
+
+# Local presentation compilation files
+slides/*.aux
+slides/*.log
+slides/*.nav
+slides/*.out
+slides/*.snm
+slides/*.synctex.gz
+slides/*.toc

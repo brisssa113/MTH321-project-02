@@ -1,0 +1,17 @@
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lrrrrr}
+\toprule
+Boundary & $C_\beta$ & $C_\beta h$ & $\widehat E^{\rm FO}_h$ & $B^{\rm FO}(h)$ & $B^{\rm FO}/\widehat E^{\rm FO}_h$ \\
+\midrule
+Neumann ($\beta=0$) & 0.304774 & $2.38105\times10^{-3}$ & $6.85289\times10^{-3}$ & $1.01285\times10^{-1}$ & 14.8 \\
+Robin ($\beta=2$) & 0.186492 & $1.45697\times10^{-3}$ & $4.15872\times10^{-3}$ & $1.01285\times10^{-1}$ & 24.4 \\
+\bottomrule
+\end{tabular}
+}
+\caption{FO maximum errors at $h=1/128$: theoretical lower bound, measured error and theoretical upper bound. The theoretical inequalities concern the exact discrete solution; the hatted value uses the floating-point solve. This comparison does not replace an algebraic-error analysis.}
+\label{tab:fo-bounds}
+\end{table}

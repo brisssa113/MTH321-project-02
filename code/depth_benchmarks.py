@@ -341,118 +341,23 @@ def make_figures(root, square, lshape):
         plt.close(fig)
 
 
-def make_report(root, square, solver, lshape):
-    def fmt(x, digits=3):
-        return f"{x:.{digits}g}"
-
-    def order(x):
-        return "--" if x == "" else f"{x:.2f}"
-
-    def num(x):
-        s = fmt(x)
-        if "e" in s:
-            mantissa, exponent = s.split("e")
-            return f"{mantissa}\\times10^{{{int(exponent)}}}"
-        return s
-
-    def tms(seconds):
-        return f"{1000*seconds:.2f}"
-
-    lines = [r"\section{Supplementary depth comparisons}",
-             r"\label{sec:depth-supplement}",
-             r"The following experiments are separate from the mixed-boundary FO/G refinement study. They use new, explicitly stated protocols and do not change any archived mixed-boundary data. The direct--iterative and FDM--FEM comparisons use the same square manufactured problem; the regularity comparison uses an L-shaped all-Dirichlet problem.",
-             "",
-             r"\subsection{Direct versus iterative solve at matched accuracy}",
-             r"On $\Omega=(0,1)^2$, set $u_*(x,y)=e^{x+y}$, $f=-2e^{x+y}$ and $u|_{\partial\Omega}=u_*$. The five-point FDM matrix is solved once by sparse direct factorisation and separately by unpreconditioned Jacobi iteration from zero. Both methods use the same assembled matrix and right-hand side. Jacobi stops on the true residual $\|b-Au^{(k)}\|_\infty$, not on the difference between successive iterates. The discrete barrier $\psi(x,y)=x(1-x)/2$ gives $\|A^{-1}r\|_\infty\le\|r\|_\infty/8$. We therefore set the residual threshold to $8\times10^{-3}E_{\mathrm{disc},\infty}$, where $E_{\mathrm{disc},\infty}=\|u_{\mathrm{direct}}-u_*\|_{\infty,\mathrm{nodes}}$. The direct solve and Jacobi solution are thus matched to a stated algebraic-error target of $10^{-3}$ times the discretisation error.",
-             r"\begin{table}[htbp]\centering\small\resizebox{\linewidth}{!}{%",
-             r"\begin{tabular}{rrrrrrr}\toprule",
-             r"$N$ & free DOF & $E_{\rm disc,\infty}$ & Jacobi steps & final $\|r\|_\infty$ & $\|u_J-u_D\|_\infty/E_{\rm disc,\infty}$ & direct/Jacobi solve (ms)\\\midrule"]
-    for r in solver:
-        lines.append(f'{r["N"]} & {r["free_dof"]} & ${num(r["discretisation_error_inf"])}$ & {r["iterations"]} & ${num(r["jacobi_residual_final"])}$ & ${num(r["algebraic_over_discretisation"])}$ & {tms(r["direct_s"])}/{tms(r["jacobi_s"])} \\\\')
-    lines += [r"\bottomrule\end{tabular}}",
-              r"\caption{Matched-accuracy sparse direct and Jacobi comparison. Assembly time, the initial residual, target residual, final residual, and both final errors are retained in \texttt{data/depth\_extension/direct\_jacobi.csv}. Times are single local measurements and should not be interpreted as portable benchmarks.}",
-              r"\end{table}",
-              r"All four Jacobi solutions satisfy the target. No direct/iterative time crossover occurs for $N=8,16,32,64$; the sparse direct solve is faster throughout this tested range. This is a conclusion about unpreconditioned Jacobi under this protocol, not about every iterative method.",
-              r"\paragraph{Why the residual target is sufficient.} Extend the error by zero to all Dirichlet nodes. On the unit-square five-point grid, $\psi(x,y)=x(1-x)/2$ has $-\Delta_h\psi=1$ at every free node and $0\leq\psi\leq1/8$ on the whole grid. Since the error vanishes on the boundary, the discrete comparison principle applied to $\pm e\leq\|r\|_\infty\psi$ gives $\|A^{-1}r\|_\infty\leq\|r\|_\infty/8$. This bound applies only to this all-Dirichlet constant-coefficient matrix. For the direct solution as a numerical reference, the observed difference is bounded by $\|r_J\|_\infty/8+\|r_D\|_\infty/8$; the reported residuals make the direct-solve term negligible at the stated precision.",
-              "",
-              r"\subsection{FDM versus FEM on identical square problem}",
-              r"For the same $f$, exact solution, Dirichlet data and square grids, the FDM uses the standard five-point stencil. The FEM uses continuous piecewise-linear triangles, obtained by splitting each square in the same orientation, and high-order quadrature for the load. Both methods have $(N+1)^2$ total nodes and $(N-1)^2$ free degrees of freedom. Their algebraic systems are solved by sparse direct methods to residuals far below the discretisation errors. To compare the same $L^2$ quantity, the FDM nodal field is explicitly interpolated as a piecewise-linear function on the FEM triangles; this is a comparison convention, not the native bilinear FDM reconstruction. The nodal $L^\infty$ error is taken at the common nodes.",
-              r"\begin{table}[htbp]\centering\small\resizebox{\linewidth}{!}{%",
-              r"\begin{tabular}{llrrrrrr}\toprule",
-              r"Method & $N$ & free DOF & nnz & $L^2$ error & order & nodal $L^\infty$ & assembly/solve (ms)\\\midrule"]
-    for r in square:
-        lines.append(f'{r["method"]} & {r["N"]} & {r["dof_free"]} & {r["nnz"]} & ${num(r["L2"])}$ & {order(r["L2_order"])} & ${num(r["nodal_Linf"])}$ & {tms(r["assembly_s"])}/{tms(r["solve_s"])} \\\\')
-    lines += [r"\bottomrule\end{tabular}}",
-              r"\caption{Square all-Dirichlet benchmark. Orders are pairwise log ratios under halving of $h=1/N$. The complete precision, residuals and timings are in \texttt{data/depth\_extension/square\_fdm\_fem.csv}.}",
-              r"\end{table}",
-              r"\begin{figure}[htbp]\centering\includegraphics[width=.68\linewidth]{figures/square_fdm_fem.png}\caption{Matched square-problem $L^2$ convergence. The horizontal axis uses ordinary increasing $h$ from left to right; refinement moves from right to left.}\end{figure}",
-              r"Both methods show approximately second-order $L^2$ decay with this reconstruction. The equal nnz counts here follow from the aligned uniform triangulation and do not imply identical matrices or general equivalence of FDM and FEM. Assembly and solve times are reported separately; no solver or discretisation cost claim is made from one local timing alone.",
-              "",
-              r"\subsection{Smooth versus nonsmooth data on an L-shaped domain}",
-              r"Let $\Omega=(-1,1)^2\setminus[0,1]^2$ and solve $-\Delta u=0$ with Dirichlet data from a manufactured exact solution. Both cases use the same P1 FEM code, the same nested quasi-uniform triangulations, the same direct solver, and the same quadrature. The smooth harmonic solution is $u_s(x,y)=e^x\sin y$. The singular harmonic solution is $u_c(r,\theta)=r^{2/3}\sin(2(\theta-\pi/2)/3)$, where $\theta=\operatorname{atan2}(y,x)$ and $2\pi$ is added if $\theta<\pi/2$. Both exact solutions are continuous. The second has an unbounded gradient near the re-entrant corner and is not $H^2$-regular. It is nonsmooth, not discontinuous. For $u_c$, $f=0$ away from the corner, both rays bounding the removed quadrant have zero trace, and the remaining outer-boundary trace is nonzero. These facts are checked in the code before the refinement runs.",
-              r"\begin{table}[htbp]\centering\small\resizebox{\linewidth}{!}{%",
-              r"\begin{tabular}{llrrrrrr}\toprule",
-              r"Solution & level & $h_{\max}$ & free DOF & $L^2$ error & $L^2$ order & energy error & energy order\\\midrule"]
-    for r in lshape:
-        lines.append(f'{r["kind"]} & {r["level"]} & {fmt(r["h"])} & {r["dof_free"]} & ${num(r["L2"])}$ & {order(r["L2_order"])} & ${num(r["energy"])}$ & {order(r["energy_order"])} \\\\')
-    lines += [r"\bottomrule\end{tabular}}",
-              r"\caption{Five L-shaped uniform refinements. The energy error is $\|\nabla(u_*-u_h)\|_{L^2(\Omega)}$. Additional nodal maximum errors, nonzeros, residuals, and separate assembly/solve times are in \texttt{data/depth\_extension/lshape\_smooth\_singular.csv}.}",
-              r"\end{table}",
-              r"For a local refinement diagnostic, define $\eta_K^2=\int_K|\nabla(u_*-u_h)|^2$ using the known manufactured solution. The corner fraction below is $\sum_{K:\,|c_K|\le 2h_{\max}}\eta_K^2/\sum_K\eta_K^2$, with $c_K$ the triangle centroid. This is an exact-error indicator available in this manufactured test, not a computable a posteriori estimator for an unknown solution.",
-              r"\begin{table}[htbp]\centering\small",
-              r"\begin{tabular}{llrrrr}\toprule",
-              r"Solution & level & free DOF & nnz & solve (ms) & corner error fraction\\\midrule"]
-    for r in lshape:
-        lines.append(f'{r["kind"]} & {r["level"]} & {r["dof_free"]} & {r["nnz"]} & {tms(r["solve_s"])} & {r["corner_energy_fraction"]:.2f} \\\\')
-    lines += [r"\bottomrule\end{tabular}",
-              r"\caption{L-shaped solve costs and the fraction of the exact energy error concentrated near the re-entrant corner. Assembly costs are listed separately in the CSV. Times are one local measurement.}",
-              r"\end{table}",
-              r"\begin{figure}[htbp]\centering\includegraphics[width=.68\linewidth]{figures/lshape_rates.png}\caption{Smooth and re-entrant-corner singular solutions, measured in the same $L^2$ and energy norms.}\end{figure}",
-              r"\begin{figure}[htbp]\centering\includegraphics[width=.68\linewidth]{figures/lshape_vs_dof.png}\caption{The same L-shaped errors plotted against free degrees of freedom.}\end{figure}",
-              r"The last two pairwise orders are approximately $2.00$ ($L^2$) and $1.00$ (energy) for the smooth case, versus $1.36$ and $0.65$ for the singular case. The latter agrees with the regularity-based P1 FEM expectations of approximately $h^{4/3}$ and $h^{2/3}$ up to small losses. On the finest mesh, about $84\%$ of the singular case's computed energy-error square is assigned to the union of whole triangles whose centroids lie within $2h_{\max}$ of the re-entrant corner, compared with less than $1\%$ for the smooth case. This centroid-selected patch is a mesh diagnostic, not the exact circular region. It supports corner-focused graded or adaptive refinement as a follow-up; no such refinement is claimed here. The measured nodal $L^\infty$ behaviour is retained as a diagnostic, not used as a proof of those norm estimates. The singular solution remains continuous; its reduced rate is caused by the corner gradient singularity. These FEM estimates are not silently transferred to an FDM scheme.",
-              "",
-              r"\paragraph{Reproduction and scope.} From the project root, install \texttt{requirements.txt} and run \texttt{python code/run\_all.py}. This command regenerates the main mixed-boundary results and the separate depth and variable-diffusion benchmarks. The square comparison is deliberately all-Dirichlet, so its rows and rates must not be substituted for the original mixed-boundary tables. The measured timing values depend on the execution machine; the error and convergence calculations are the substantive comparisons."]
-    (root/"report"/"depth_extension.tex").write_text("\n".join(lines)+"\n", encoding="utf-8")
 
 
 def main(root: Path):
-    for name in ("data", "figures", "report", "data/depth_extension"):
+    """Compute all Section 8 data and figures without report-authoring inputs."""
+    for name in ("data", "figures", "data/depth_extension"):
         (root/name).mkdir(exist_ok=True)
     checks()
     square = square_comparison(root)
     solver = solver_comparison(root)
     lshape = lshape_comparison(root)
-    quadrature = lshape_quadrature_check(root)
-    solver_check = lshape_solver_check(root)
+    lshape_quadrature_check(root)
+    lshape_solver_check(root)
     make_figures(root, square, lshape)
-    make_report(root, square, solver, lshape)
-    with (root/"report"/"depth_extension.tex").open("a", encoding="utf-8") as f:
-        sensitivity = abs(quadrature[-1]['energy']-quadrature[0]['energy'])/quadrature[-1]['energy']
-        f.write("\n\\paragraph{Singular-error quadrature and algebraic checks.} "
-                "On the fixed finest singular FE solution, error-only quadrature orders "
-                "12, 16 and 19 yield energy errors "
-                + ", ".join(f"{r['energy']:.8g}" for r in quadrature)
-                + f". The order-12 versus order-19 change is {100*sensitivity:.3f} percent; "
-                "the quadrature study supports the observed rate but does not certify all displayed digits. "
-                "The finest-mesh tight-CG cross-check differs from the direct solution "
-                + f"by {solver_check[0]['nodal_difference_inf']:.3g} in nodal maximum norm. "
-                "Full values and residuals are in "
-                "\\texttt{data/depth\\_extension/lshape\\_quadrature.csv} and "
-                "\\texttt{data/depth\\_extension/lshape\\_solver\\_check.csv}. "
-                "The L-shaped meshes are shown in Figures "
-                "\\ref{fig:lshape-coarse} and \\ref{fig:lshape-fine}.\n"
-                "\\begin{figure}[htbp]\\centering\\includegraphics[width=.45\\linewidth]{figures/lshape_mesh_level1.png}"
-                "\\caption{Coarse L-shaped mesh, re-entrant corner and zero-trace rays.}\\label{fig:lshape-coarse}\\end{figure}\n"
-                "\\begin{figure}[htbp]\\centering\\includegraphics[width=.55\\linewidth]{figures/lshape_mesh_level5.png}"
-                "\\caption{Fine L-shaped mesh.}\\label{fig:lshape-fine}\\end{figure}\n")
-        f.write((root/"report"/"lshape_theory.tex").read_text(encoding="utf-8"))
     metadata = dict(python=platform.python_version(), platform=platform.platform(),
                     numpy=version("numpy"), scipy=version("scipy"),
                     matplotlib=version("matplotlib"), scikit_fem=version("scikit-fem"),
-                    source="Single fresh local run; timings are single measurements")
-    (root/"data"/"depth_extension"/"run_metadata.json").write_text(json.dumps(metadata, indent=2)+"\n", encoding="utf-8")
-    print("Checks passed. Wrote matched comparisons and L-shaped refinement tables.")
-    for rows, key in ((square,"L2"),(lshape,"energy")):
-        for r in rows[-4:]:
-            print(r.get("method",r.get("kind")), r["h"], r[key], r.get(key+"_order"))
-    print("Jacobi iterations:", [r["iterations"] for r in solver])
+                    source="Fresh numerical run; timings are single measurements")
+    (root/"data"/"depth_extension"/"run_metadata.json").write_text(
+        json.dumps(metadata, indent=2)+"\n", encoding="utf-8")
+    print("Section 8 checks passed; Jacobi iterations:", [r["iterations"] for r in solver])

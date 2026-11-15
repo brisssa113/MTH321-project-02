@@ -1,0 +1,21 @@
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{rlrr}
+\toprule
+$N$ & face mean & maximum error & sampled flux error \\
+\midrule
+7 & harmonic & $8.88\times10^{-16}$ & $1.78\times10^{-15}$ \\
+7 & arithmetic & $8.15\times10^{-2}$ & $2.29\times10^{-1}$ \\
+15 & harmonic & $1.33\times10^{-15}$ & $2.66\times10^{-15}$ \\
+15 & arithmetic & $3.95\times10^{-2}$ & $9.90\times10^{-2}$ \\
+31 & harmonic & $1.89\times10^{-15}$ & $1.40\times10^{-14}$ \\
+31 & arithmetic & $1.94\times10^{-2}$ & $4.70\times10^{-2}$ \\
+63 & harmonic & $6.66\times10^{-15}$ & $6.97\times10^{-14}$ \\
+63 & arithmetic & $9.60\times10^{-3}$ & $2.29\times10^{-2}$ \\
+\bottomrule
+\end{tabular}
+\caption{Layered benchmark. The last column is the absolute error in positive $a u_x$ at one sampled face; it is not a whole-interface maximum. Full values are in \path{data/variable_diffusion/layered.csv}.}
+\label{tab:variable-layered}
+\end{table}

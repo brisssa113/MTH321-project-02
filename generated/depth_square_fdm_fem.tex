@@ -1,0 +1,23 @@
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lrrrrrrr}
+\toprule
+Method & $N$ & free DOF & nnz & $L^2$ error & order & nodal $L^\infty$ & assembly/solve (ms) \\
+\midrule
+FDM & 8 & 49 & 217 & $1.39\times10^{-2}$ & -- & $5.44\times10^{-4}$ & 1.44/0.24 \\
+FEM & 8 & 49 & 217 & $1.32\times10^{-2}$ & -- & $1.09\times10^{-3}$ & 3.43/0.23 \\
+FDM & 16 & 225 & 1065 & $3.47\times10^{-3}$ & 2.00 & $1.40\times10^{-4}$ & 1.57/0.55 \\
+FEM & 16 & 225 & 1065 & $3.31\times10^{-3}$ & 2.00 & $2.80\times10^{-4}$ & 8.56/1.20 \\
+FDM & 32 & 961 & 4681 & $8.69\times10^{-4}$ & 2.00 & $3.51\times10^{-5}$ & 4.70/3.78 \\
+FEM & 32 & 961 & 4681 & $8.27\times10^{-4}$ & 2.00 & $7.02\times10^{-5}$ & 22.13/4.94 \\
+FDM & 64 & 3969 & 19593 & $2.17\times10^{-4}$ & 2.00 & $8.79\times10^{-6}$ & 4.28/12.51 \\
+FEM & 64 & 3969 & 19593 & $2.07\times10^{-4}$ & 2.00 & $1.76\times10^{-5}$ & 71.55/9.47 \\
+\bottomrule
+\end{tabular}
+}
+\caption{Square all-Dirichlet benchmark using a common P1 reconstruction for the $L^2$ comparison. Orders are adjacent-grid log ratios. Full values are in \path{data/depth_extension/square_fdm_fem.csv}.}
+\label{tab:depth-square-fdm-fem}
+\end{table}

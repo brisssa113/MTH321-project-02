@@ -608,13 +608,14 @@ def inverse_inf_norm_estimate(A) -> float:
 
 
 def run_condition_estimates(output_dir: Path, grids=(16, 32, 64, 128)) -> list[dict]:
-    """Bound the forward error of the direct solve through a conditioning estimate.
+    """Estimate conditioning and the algebraic-error scale of the direct solve.
 
-    For the computed solution U and residual r = b - A U, the exact relation
-    U - U_exact_discrete = A^{-1} r gives the rigorous bound
-    ||U - U_h||_inf <= ||A^{-1}||_inf ||r||_inf, evaluated with the estimated
-    ||A^{-1}||_inf.  The same estimate gives the residual that an iterative
-    solver must reach for its error to stay below 1% of the discretisation error.
+    With r=b-AU, the exact discrete solution satisfies U_h-U=A^{-1}r.
+    The exact inverse norm gives ||U-U_h||_inf <= ||A^{-1}||_inf ||r||_inf.
+    Here onenormest supplies a lower estimate of that norm, so its product
+    with the residual and the derived tolerance are diagnostics rather than
+    certified upper bounds. The report separately uses its proved stability
+    estimate to assess algebraic error.
     """
     records: list[dict] = []
     eps = float(np.finfo(float).eps)
@@ -650,13 +651,12 @@ def run_condition_estimates(output_dir: Path, grids=(16, 32, 64, 128)) -> list[d
 
 
 def run_weak_gmres_check(output_dir: Path, N: int = 64) -> list[dict]:
-    """A genuinely iterative check using only Jacobi, with no ILU factorisation.
+    """Check Jacobi-preconditioned GMRES without an ILU factorisation.
 
-    Besides the algebraic/discretisation ratio, each run records the relative
-    residual ||r||_inf/||b||_inf and the residual level
-    1e-2 E_inf/(||A^{-1}||_inf ||b||_inf) that suffices for a ratio below 1e-2.
-    The rule is sufficient, not necessary: it is reported next to the observed
-    ratio so that prediction and outcome can be compared.
+    The inverse-norm estimate supplies a diagnostic residual threshold.
+    Actual acceptance uses the measured iterative/direct difference divided
+    by the discretisation error; an estimated inverse norm alone does not
+    certify a sufficient error bound.
     """
     records = []
     for boundary in ("neumann", "robin"):
@@ -697,138 +697,8 @@ def run_weak_gmres_check(output_dir: Path, N: int = 64) -> list[dict]:
     return records
 
 
-def write_report_summary(rows: list[dict], fitted: list[dict], output_dir: Path) -> None:
-    """Write compact CSV and LaTeX tables that can be included in the report."""
-    fitted_by_key = {(r["boundary"], r["closure"]): r for r in fitted}
-    finest = []
-    for boundary in ("neumann", "robin"):
-        for closure in ("first", "ghost"):
-            candidates = [
-                r for r in rows if (r["boundary"], r["closure"]) == (boundary, closure)
-            ]
-            row = max(candidates, key=lambda r: r["N"])
-            fit = fitted_by_key[(boundary, closure)]
-            finest.append({
-                "boundary": boundary,
-                "closure": closure,
-                "N": row["N"],
-                "ndof": row["ndof"],
-                "nnz": row["nnz"],
-                "l2": row["l2"],
-                "linf": row["linf"],
-                "boundary_linf": row["boundary_linf"],
-                "interior_linf": row["interior_linf"],
-                "fitted_order_l2": fit["fitted_order_l2"],
-                "fitted_order_linf": fit["fitted_order_linf"],
-                "residual_componentwise": row["residual_componentwise"],
-                "asymmetry_frobenius": row["asymmetry_frobenius"],
-                "total_seconds_median": row["total_seconds_median"],
-                "solver": "spsolve/SuperLU",
-                "solver_tolerance": "N/A (direct solver)",
-            })
-    with (output_dir / "report_summary.csv").open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(finest[0]))
-        writer.writeheader()
-        writer.writerows(finest)
-
-    latex_lines = [
-        r"\begin{tabular}{llrrrrrr}",
-        r"\hline",
-        r"Boundary & Closure & $N$ & $E_{2,h}$ & $p_2$ & $E_{\infty,h}$ & $p_\infty$ & $\eta$ \\",
-        r"\hline",
-    ]
-    for row in finest:
-        latex_lines.append(
-            f"{row['boundary'].title()} & {row['closure'].title()} & {row['N']} & "
-            f"{row['l2']:.3e} & {row['fitted_order_l2']:.3f} & "
-            f"{row['linf']:.3e} & {row['fitted_order_linf']:.3f} & "
-            f"{row['residual_componentwise']:.2e} \\\\" 
-        )
-    latex_lines.extend([r"\hline", r"\end{tabular}"])
-    (output_dir / "report_summary.tex").write_text(
-        "\n".join(latex_lines) + "\n", encoding="utf-8"
-    )
 
 
-def write_section5_summary(
-    weighted_rows: list[dict], energy_rows: list[dict], cg_rows: list[dict], output_dir: Path
-) -> None:
-    """Write report-ready LaTeX tables for the weighted-energy section."""
-    lines = [
-        r"\begin{table}[htbp]",
-        r"\centering",
-        r"\small",
-        r"\begin{tabular}{llrrr}",
-        r"\hline",
-        r"Boundary & Closure & $\|K-K^T\|_F/\|K\|_F$ & $\lambda_{\min}(K)$ & Energy identity defect \\",
-        r"\hline",
-    ]
-    for row in weighted_rows:
-        lines.append(
-            f"{row['boundary'].title()} & {row['closure'].title()} & "
-            f"{row['weighted_asymmetry_frobenius']:.2e} & "
-            f"{row['smallest_eigenvalue']:.4f} & "
-            f"{row['energy_identity_relative_defect']:.2e} \\\\"
-        )
-    lines.extend([
-        r"\hline",
-        r"\end{tabular}",
-        r"\caption{Numerical checks of weighted symmetry, positive definiteness and the energy identity on $N=32$.}",
-        r"\label{tab:weighted-diagnostics}",
-        r"\end{table}",
-        "",
-        r"\begin{table}[htbp]",
-        r"\centering",
-        r"\small",
-        r"\begin{tabular}{llrrr}",
-        r"\hline",
-        r"Boundary & Closure & $E_{E,h}$ at $N=512$ & Fitted order & $R^2$ \\",
-        r"\hline",
-    ])
-    for boundary in ("neumann", "robin"):
-        for closure in ("first", "ghost"):
-            subset = [
-                r for r in energy_rows
-                if (r["boundary"], r["closure"]) == (boundary, closure)
-            ]
-            finest = max(subset, key=lambda r: r["N"])
-            lines.append(
-                f"{boundary.title()} & {closure.title()} & "
-                f"{finest['energy_error']:.3e} & "
-                f"{finest['fitted_energy_order_finest_three']:.3f} & "
-                f"{finest['r_squared_energy_finest_three']:.6f} \\\\"
-            )
-    lines.extend([
-        r"\hline",
-        r"\end{tabular}",
-        r"\caption{Weighted-energy errors and fitted orders on the finest three levels, $N=128,256,512$.}",
-        r"\label{tab:energy-convergence}",
-        r"\end{table}",
-        "",
-        r"\begin{table}[htbp]",
-        r"\centering",
-        r"\small",
-        r"\begin{tabular}{llrrr}",
-        r"\hline",
-        r"Boundary & Closure & CG iterations & Weighted residual & Algebraic/discretisation \\",
-        r"\hline",
-    ])
-    for row in cg_rows:
-        lines.append(
-            f"{row['boundary'].title()} & {row['closure'].title()} & "
-            f"{row['iterations']} & {row['weighted_relative_inf_residual']:.2e} & "
-            f"{row['algebraic_to_discretisation_ratio']:.2e} \\\\"
-        )
-    lines.extend([
-        r"\hline",
-        r"\end{tabular}",
-        r"\caption{Jacobi-preconditioned CG results for $K_h^cU=W_h^cb$ on $N=64$ with relative tolerance $10^{-10}$.}",
-        r"\label{tab:weighted-cg}",
-        r"\end{table}",
-    ])
-    (output_dir / "section5_summary.tex").write_text(
-        "\n".join(lines) + "\n", encoding="utf-8"
-    )
 
 
 def run_all(output_dir: Path) -> None:
@@ -846,12 +716,16 @@ def run_all(output_dir: Path) -> None:
     matched = run_matched_accuracy(output_dir, rows)
     fem_rows = run_fem_comparison(output_dir)
     pure_rows = run_pure_neumann(output_dir)
-    write_report_summary(rows, fitted, output_dir)
-    write_section5_summary(weighted_diagnostics, energy_rows, cg_rows, output_dir)
-    from make_figures import make_plots, make_tolerance_plot, make_weighted_energy_plots, make_depth_plots
-    make_plots(rows, output_dir, fitted)
+    from make_figures import make_plots, make_tolerance_plot, make_weighted_energy_plot, make_depth_plots
+    with (output_dir / "cost_accuracy_candidates.csv").open(newline="", encoding="utf-8") as f:
+        cost_rows = [
+            {**r, "N": int(r["N"]), "linf": float(r["linf"]),
+             "total_seconds_median": float(r["total_seconds_median"])}
+            for r in csv.DictReader(f)
+        ]
+    make_plots(rows, output_dir, fitted, cost_rows=cost_rows)
     make_tolerance_plot(algebraic, output_dir)
-    make_weighted_energy_plots(energy_rows, cg_rows, output_dir)
+    make_weighted_energy_plot(energy_rows, output_dir)
     make_depth_plots(fem_rows, pure_rows, output_dir)
     metadata = {
         "python": platform.python_version(), "platform": platform.platform(),

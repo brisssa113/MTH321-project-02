@@ -43,7 +43,8 @@ def make_depth_plots(fem_rows: list[dict], pure_rows: list[dict], output_dir: Pa
         ax.grid(True, which="both", alpha=.3); ax.legend(fontsize=9)
     fig.tight_layout(); fig.savefig(output_dir / "pure_neumann_depth.png", dpi=200); plt.close(fig)
 
-def make_plots(rows: list[dict], output_dir: Path, fitted: list[dict]) -> None:
+def make_plots(rows: list[dict], output_dir: Path, fitted: list[dict],
+               *, cost_rows: list[dict] | None = None) -> None:
     fit_map = {(r["boundary"], r["closure"]): r for r in fitted}
     styles = {("neumann", "first"): "o-", ("neumann", "ghost"): "s-",
               ("robin", "first"): "o--", ("robin", "ghost"): "s--"}
@@ -79,11 +80,16 @@ def make_plots(rows: list[dict], output_dir: Path, fitted: list[dict]) -> None:
     fig.tight_layout(); fig.savefig(output_dir / "matrix_spy.png", dpi=200); plt.close(fig)
 
     fig, ax = plt.subplots(figsize=(7, 4.5))
+    # Figure 10 includes every measured candidate, including N=4 and N=8.
+    trajectory_rows = rows if cost_rows is None else cost_rows
     for key, style in styles.items():
-        subset = [r for r in rows if (r["boundary"], r["closure"]) == key]
+        subset = sorted(
+            (r for r in trajectory_rows if (r["boundary"], r["closure"]) == key),
+            key=lambda r: r["N"],
+        )
         ax.loglog([r["linf"] for r in subset], [r["total_seconds_median"] for r in subset], style, label=f"{key[0].title()} / {key[1]}")
     ax.set_xlabel("global nodal max error"); ax.set_ylabel("median of assembly + solve time (s)")
-    ax.set_title("Cost versus accuracy (median of repeated runs; warm-up excluded)"); ax.grid(True, which="both", alpha=.3); ax.legend(fontsize=11)
+    ax.set_title("Cost versus accuracy (median times)"); ax.grid(True, which="both", alpha=.3); ax.legend(fontsize=11)
     fig.tight_layout(); fig.savefig(output_dir / "cost_vs_accuracy.png", dpi=200); plt.close(fig)
 
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
@@ -128,8 +134,8 @@ def make_tolerance_plot(records: list[dict], output_dir: Path) -> None:
     fig.tight_layout(); fig.savefig(output_dir / "tolerance_sweep.png", dpi=200); plt.close(fig)
 
 
-def make_weighted_energy_plots(
-    energy_rows: list[dict], cg_rows: list[dict], output_dir: Path
+def make_weighted_energy_plot(
+    energy_rows: list[dict], output_dir: Path
 ) -> None:
     styles = {("neumann", "first"): "o-", ("neumann", "ghost"): "s-",
               ("robin", "first"): "o--", ("robin", "ghost"): "s--"}
@@ -151,19 +157,4 @@ def make_weighted_energy_plots(
     ax.grid(True, which="both", alpha=.3); ax.legend(fontsize=11); ax.invert_xaxis()
     fig.tight_layout()
     fig.savefig(output_dir / "weighted_energy_convergence.png", dpi=200)
-    plt.close(fig)
-
-    labels = [f"{r['boundary'].title()}\n{r['closure'].title()}" for r in cg_rows]
-    x = np.arange(len(labels))
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4.5))
-    axes[0].bar(x, [r["iterations"] for r in cg_rows], color="tab:blue")
-    axes[0].set_ylabel("CG iterations")
-    axes[0].set_title("Jacobi-preconditioned CG on N=64")
-    axes[1].bar(x, [r["solve_seconds"] for r in cg_rows], color="tab:orange")
-    axes[1].set_ylabel("solve time (s)")
-    axes[1].set_title("Measured CG solve time")
-    for ax in axes:
-        ax.set_xticks(x, labels); ax.grid(True, axis="y", alpha=.3)
-    fig.tight_layout()
-    fig.savefig(output_dir / "cg_solver_comparison.png", dpi=200)
     plt.close(fig)

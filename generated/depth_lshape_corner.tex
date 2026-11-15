@@ -1,0 +1,23 @@
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrr}
+\toprule
+Solution & level & free DOF & nnz & solve (ms) & corner error fraction \\
+\midrule
+smooth & 1 & 5 & 13 & 0.32 & 1.00 \\
+singular & 1 & 5 & 13 & 0.26 & 1.00 \\
+smooth & 2 & 33 & 137 & 0.31 & 0.32 \\
+singular & 2 & 33 & 137 & 0.29 & 0.93 \\
+smooth & 3 & 161 & 745 & 0.52 & 0.08 \\
+singular & 3 & 161 & 745 & 0.50 & 0.89 \\
+smooth & 4 & 705 & 3401 & 2.16 & 0.02 \\
+singular & 4 & 705 & 3401 & 1.44 & 0.86 \\
+smooth & 5 & 2945 & 14473 & 20.34 & 0.00 \\
+singular & 5 & 2945 & 14473 & 14.02 & 0.84 \\
+\bottomrule
+\end{tabular}
+\caption{L-shaped solve costs and fraction of the computed squared energy error in whole triangles whose centroids are within $2h_{\max}$ of the re-entrant corner. Fractions are rounded to two decimal places.}
+\label{tab:depth-lshape-corner}
+\end{table}

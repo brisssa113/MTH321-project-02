@@ -1,0 +1,25 @@
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{rlrr}
+\toprule
+$a_R/a_L$ & mean & Jacobi-CG steps & direct nodal error \\
+\midrule
+1 & harmonic & 197 & $1.54\times10^{-14}$ \\
+1 & arithmetic & 197 & $1.54\times10^{-14}$ \\
+2 & harmonic & 196 & $1.24\times10^{-14}$ \\
+2 & arithmetic & 196 & $1.16\times10^{-3}$ \\
+5 & harmonic & 205 & $8.33\times10^{-15}$ \\
+5 & arithmetic & 193 & $5.82\times10^{-3}$ \\
+10 & harmonic & 204 & $6.66\times10^{-15}$ \\
+10 & arithmetic & 193 & $9.60\times10^{-3}$ \\
+20 & harmonic & 203 & $6.33\times10^{-15}$ \\
+20 & arithmetic & 192 & $1.23\times10^{-2}$ \\
+50 & harmonic & 202 & $9.77\times10^{-15}$ \\
+50 & arithmetic & 191 & $1.43\times10^{-2}$ \\
+\bottomrule
+\end{tabular}
+\caption{Material-contrast sweep at $N=63$. The error belongs to the direct solve; CG contributes the iteration count. CG errors, residuals and direct/CG differences on all grids are retained separately in \path{data/variable_diffusion/contrast_sweep.csv}.}
+\label{tab:variable-contrast}
+\end{table}

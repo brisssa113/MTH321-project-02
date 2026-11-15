@@ -1,0 +1,21 @@
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrr}
+\toprule
+Method & $N$ & $L^2$ error & $L^2$ order & nodal $L^\infty$ & $L^\infty$ order \\
+\midrule
+FDM & 8 & $6.43\times10^{-3}$ & -- & $1.29\times10^{-2}$ & -- \\
+FEM & 8 & $2.10\times10^{-2}$ & -- & $1.26\times10^{-2}$ & -- \\
+FDM & 16 & $1.60\times10^{-3}$ & 2.01 & $3.21\times10^{-3}$ & 2.01 \\
+FEM & 16 & $5.35\times10^{-3}$ & 1.97 & $3.21\times10^{-3}$ & 1.97 \\
+FDM & 32 & $3.99\times10^{-4}$ & 2.00 & $8.01\times10^{-4}$ & 2.00 \\
+FEM & 32 & $1.34\times10^{-3}$ & 1.99 & $8.08\times10^{-4}$ & 1.99 \\
+FDM & 64 & $9.97\times10^{-5}$ & 2.00 & $2.00\times10^{-4}$ & 2.00 \\
+FEM & 64 & $3.36\times10^{-4}$ & 2.00 & $2.02\times10^{-4}$ & 2.00 \\
+\bottomrule
+\end{tabular}
+\caption{Prescribed sine benchmark on four matched meshes. FDM uses a discrete nodal $L^2$ norm; FEM integrates the continuous P1 error. Full diagnostics are in \path{data/variable_diffusion/sine_required.csv}.}
+\label{tab:variable-sine}
+\end{table}
